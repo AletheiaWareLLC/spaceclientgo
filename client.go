@@ -18,7 +18,6 @@ package main
 
 import (
 	"encoding/base64"
-	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
 	"github.com/AletheiaWareLLC/financego"
 	"github.com/AletheiaWareLLC/spacego"
@@ -26,81 +25,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	if len(os.Args) > 1 {
 		// Handle Arguments
 		switch os.Args[1] {
-		case "alias":
-			node, err := bcgo.GetNode()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			publicKey, err := bcgo.RSAPublicKeyToBytes(&node.Key.PublicKey)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			// Open Alias Channel
-			aliases, err := aliasgo.OpenAliasChannel()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			// Sync channel
-			if err := aliases.Sync(); err != nil {
-				log.Println(err)
-				return
-			}
-			alias, err := aliasgo.GetAlias(aliases, &node.Key.PublicKey)
-			if err != nil {
-				log.Println(err)
-				a := &aliasgo.Alias{
-					Alias:        alias,
-					PublicKey:    publicKey,
-					PublicFormat: bcgo.PublicKeyFormat_PKIX,
-				}
-				data, err := proto.Marshal(a)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				signatureAlgorithm := bcgo.SignatureAlgorithm_SHA512WITHRSA_PSS
-
-				signature, err := bcgo.CreateSignature(node.Key, bcgo.Hash(data), signatureAlgorithm)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				response, err := http.PostForm(spacego.SPACE_WEBSITE+"/alias", url.Values{
-					"alias":              {alias},
-					"publicKey":          {base64.RawURLEncoding.EncodeToString(publicKey)},
-					"publicKeyFormat":    {"PKIX"},
-					"signature":          {base64.RawURLEncoding.EncodeToString(signature)},
-					"signatureAlgorithm": {signatureAlgorithm.String()},
-				})
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println(response)
-				if err := aliases.Sync(); err != nil {
-					log.Println(err)
-					return
-				}
-				alias, err = aliasgo.GetAlias(aliases, &node.Key.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-			}
-			log.Println("Registered as", alias)
 		case "list":
 			node, err := bcgo.GetNode()
 			if err != nil {
