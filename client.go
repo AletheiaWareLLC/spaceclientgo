@@ -24,7 +24,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 )
 
@@ -279,17 +278,10 @@ func main() {
 			}
 			customer, err := financego.GetCustomerSync(customers, node.Alias, node.Key, node.Alias)
 			if err != nil {
-				publicKey, err := bcgo.RSAPublicKeyToBase64(&node.Key.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
 				log.Println(err)
-				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/customer?alias="+node.Alias, " and")
-				log.Println("enter your alias, email, payment info, and public key:\n", publicKey)
-			} else {
-				log.Println(customer)
+				return
 			}
+			log.Println(customer)
 		case "subscription":
 			node, err := bcgo.GetNode()
 			if err != nil {
@@ -303,14 +295,15 @@ func main() {
 			}
 			subscription, err := financego.GetSubscriptionSync(subscriptions, node.Alias, node.Key, node.Alias)
 			if err != nil {
-				publicKey, err := bcgo.RSAPublicKeyToBase64(&node.Key.PublicKey)
+				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
 				if err != nil {
 					log.Println(err)
 					return
 				}
 				log.Println(err)
-				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/subscription?alias="+node.Alias, " and")
-				log.Println("enter your alias, email, payment info, and public key:\n", publicKey)
+				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/subscription?alias="+node.Alias, "and")
+				log.Println("enter your alias, email, payment info, and public key:")
+				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 			} else {
 				log.Println(subscription)
 			}
@@ -397,25 +390,10 @@ func main() {
 
 				log.Println("Meta:", metaReference)
 			} else {
-				website()
+				bcgo.GetAndPrintURL(spacego.SPACE_WEBSITE)
 			}
 		}
 	} else {
-		website()
+		bcgo.GetAndPrintURL(spacego.SPACE_WEBSITE)
 	}
-}
-
-func website() {
-	response, err := http.Get(spacego.SPACE_WEBSITE)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(response)
-	data, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(string(data))
 }
