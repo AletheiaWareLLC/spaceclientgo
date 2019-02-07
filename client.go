@@ -236,7 +236,12 @@ func main() {
 					log.Println(err)
 					return
 				}
-				customer, err := spacego.GetCustomer(node)
+				customers, err := financego.OpenCustomerChannel()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				customer, err := financego.GetCustomerSync(customers, node.Alias, node.Key, node.Alias)
 				if err != nil {
 					log.Println("No Customer")
 					// TODO mine locally
@@ -266,7 +271,12 @@ func main() {
 				log.Println(err)
 				return
 			}
-			customer, err := spacego.GetCustomer(node)
+			customers, err := financego.OpenCustomerChannel()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			customer, err := financego.GetCustomerSync(customers, node.Alias, node.Key, node.Alias)
 			if err != nil {
 				publicKey, err := bcgo.RSAPublicKeyToBase64(&node.Key.PublicKey)
 				if err != nil {
@@ -285,7 +295,12 @@ func main() {
 				log.Println(err)
 				return
 			}
-			subscription, err := spacego.GetSubscription(node)
+			subscriptions, err := financego.OpenSubscriptionChannel()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			subscription, err := financego.GetSubscriptionSync(subscriptions, node.Alias, node.Key, node.Alias)
 			if err != nil {
 				publicKey, err := bcgo.RSAPublicKeyToBase64(&node.Key.PublicKey)
 				if err != nil {
