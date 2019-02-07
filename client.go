@@ -173,6 +173,7 @@ func main() {
 					if err := spacego.GetFile(files, node.Alias, node.Key, fileRecordHash, func(entry *bcgo.BlockEntry, data []byte) {
 						if len(os.Args) > 3 {
 							ioutil.WriteFile(os.Args[3], data, 0600)
+							log.Println("downloaded to " + os.Args[3])
 						} else {
 							os.Stdout.Write(data)
 						}
@@ -313,24 +314,108 @@ func main() {
 			} else {
 				log.Println(subscription)
 			}
-		case "status":
-			response, err := http.Get(spacego.SPACE_WEBSITE + "/status")
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println(response)
 		case "stripe-webhook":
 			// TODO
 		default:
-			log.Println("Unable to handle", os.Args)
+			if len(os.Args) > 2 {
+				name := os.Args[1]
+				mime := os.Args[2]
+				var data []byte
+				var err error
+				if len(os.Args) > 3 {
+					// Read data from file
+					data, err = ioutil.ReadFile(os.Args[3])
+				} else {
+					// Read data from system in
+					data, err = ioutil.ReadAll(os.Stdin)
+				}
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				size := uint64(len(data))
+
+				// TODO compress data
+
+				node, err := bcgo.GetNode()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				// Create an array to hold at most two references (file, preview)
+				references := make([]*bcgo.Reference, 0, 2)
+
+				fileBundle, err := spacego.NewBundle(node, data)
+
+				files, err := spacego.OpenFileChannel(node.Alias)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				fileReference, err := spacego.MineBundle(node, files, node.Alias, &node.Key.PublicKey, fileBundle, nil)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				// Add fileReference to list of references
+				references = append(references, fileReference)
+				log.Println("File:", fileReference)
+
+				// TODO Add previewReference to list of references
+				//references = append(references, previewReference)
+				//log.Println("Preview:", previewReference)
+
+				meta := spacego.Meta{
+					Name: name,
+					Size: size,
+					Type: mime,
+				}
+				data, err = proto.Marshal(&meta)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				metaBundle, err := spacego.NewBundle(node, data)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				metas, err := spacego.OpenMetaChannel(node.Alias)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				metaReference, err := spacego.MineBundle(node, metas, node.Alias, &node.Key.PublicKey, metaBundle, references)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				log.Println("Meta:", metaReference)
+			} else {
+				website()
+			}
 		}
 	} else {
-		response, err := http.Get(spacego.SPACE_WEBSITE)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println(response)
+		website()
 	}
+}
+
+func website() {
+	response, err := http.Get(spacego.SPACE_WEBSITE)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(response)
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(string(data))
 }
