@@ -72,7 +72,7 @@ func main() {
 				log.Println(err)
 				return
 			}
-			metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+			metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 			if err != nil {
 				log.Println(err)
 				return
@@ -89,7 +89,7 @@ func main() {
 				return
 			}
 			log.Println(count, "files")
-			shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
+			shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
 			if err != nil {
 				log.Println(err)
 				return
@@ -99,11 +99,7 @@ func main() {
 			// List files shared with key
 			err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
 				for _, reference := range entry.Record.Reference {
-					metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + entry.Record.Creator)
-					if err != nil {
-						return err
-					}
-					err = spacego.GetSharedMeta(metas, reference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+					err = spacego.GetSharedMeta(entry.Record.Creator, reference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 						count = count + 1
 						return ShowFileShort(entry, meta)
 					})
@@ -131,7 +127,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -147,7 +143,7 @@ func main() {
 				}
 				if !success {
 					// Show file shared to key with given hash
-					shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
+					shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
 					if err != nil {
 						log.Println(err)
 						return
@@ -155,11 +151,7 @@ func main() {
 					err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
 						for _, reference := range entry.Record.Reference {
 							if bytes.Equal(recordHash, reference.RecordHash) {
-								metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + entry.Record.Creator)
-								if err != nil {
-									return err
-								}
-								err = spacego.GetSharedMeta(metas, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+								err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 									return ShowFileLong(entry, meta)
 								})
 								if err != nil {
@@ -185,7 +177,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -204,7 +196,7 @@ func main() {
 					return
 				}
 				log.Println(count, "files")
-				shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
+				shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -214,11 +206,7 @@ func main() {
 				// Show all files shared to key with given mime-type
 				err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
 					for _, reference := range entry.Record.Reference {
-						metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + entry.Record.Creator)
-						if err != nil {
-							return err
-						}
-						err = spacego.GetSharedMeta(metas, reference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+						err = spacego.GetSharedMeta(entry.Record.Creator, reference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 							if meta.Type == os.Args[2] {
 								count = count + 1
 								return ShowFileShort(entry, meta)
@@ -260,12 +248,12 @@ func main() {
 					log.Println(err)
 					return
 				}
-				files, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_FILE + node.Alias)
+				files, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_FILE + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -293,7 +281,7 @@ func main() {
 				}
 				if !success {
 					// Get file shared to key with given hash
-					shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
+					shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
 					if err != nil {
 						log.Println(err)
 						return
@@ -301,17 +289,9 @@ func main() {
 					err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
 						for _, reference := range entry.Record.Reference {
 							if bytes.Equal(recordHash, reference.RecordHash) {
-								files, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_FILE + entry.Record.Creator)
-								if err != nil {
-									return err
-								}
-								metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + entry.Record.Creator)
-								if err != nil {
-									return err
-								}
-								err = spacego.GetSharedMeta(metas, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+								err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 									for index, reference := range entry.Record.Reference {
-										err := spacego.GetSharedFile(files, reference.RecordHash, share.ChunkKey[index], func(entry *bcgo.BlockEntry, data []byte) error {
+										err := spacego.GetSharedFile(entry.Record.Creator, reference.RecordHash, share.ChunkKey[index], func(entry *bcgo.BlockEntry, data []byte) error {
 											_, err := writer.Write(data)
 											if err != nil {
 												return err
@@ -343,7 +323,7 @@ func main() {
 				log.Println("get <hash> <file>")
 				log.Println("get <hash> (data written to stdout)")
 			}
-		case "upload":
+		case "post":
 			if len(os.Args) > 3 {
 				name := os.Args[2]
 				mime := os.Args[3]
@@ -378,11 +358,11 @@ func main() {
 				index := 0
 				size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, references, reader, func(key []byte, record *bcgo.Record) error {
 					index = index + 1
-					reference, err := spacego.UploadRecord("file", record)
+					reference, err := spacego.PostRecord("file", record)
 					if err != nil {
 						return err
 					}
-					log.Println("Uploaded", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+					log.Println("Posted", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 					references = append(references, reference)
 					return nil
 				})
@@ -391,7 +371,7 @@ func main() {
 					return
 				}
 
-				log.Println("Uploaded", name, "in", len(references), "chunks")
+				log.Println("Posted", name, "in", len(references), "chunks")
 
 				meta := spacego.Meta{
 					Name: name,
@@ -411,15 +391,15 @@ func main() {
 					return
 				}
 
-				reference, err := spacego.UploadRecord("meta", record)
+				reference, err := spacego.PostRecord("meta", record)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println("Uploaded metadata", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+				log.Println("Posted metadata", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 			} else {
-				log.Println("upload <name> <mime> <file>")
-				log.Println("upload <name> <mime> (data read from stdin)")
+				log.Println("post <name> <mime> <file>")
+				log.Println("post <name> <mime> (data read from stdin)")
 			}
 		case "customer":
 			node, err := bcgo.GetNode()
@@ -488,7 +468,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -520,7 +500,7 @@ func main() {
 					}}
 
 					for _, alias := range recipients {
-						shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + alias)
+						shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + alias)
 						if err != nil {
 							return err
 						}
@@ -556,17 +536,17 @@ func main() {
 					log.Println(err)
 					return
 				}
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
+				shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				tags, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_TAG + node.Alias)
+				tags, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_TAG + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -606,11 +586,7 @@ func main() {
 								err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
 									for _, reference := range entry.Record.Reference {
 										if bytes.Equal(recordHash, reference.RecordHash) {
-											metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + entry.Record.Creator)
-											if err != nil {
-												return err
-											}
-											err = spacego.GetSharedMeta(metas, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+											err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 												count = count + 1
 												return ShowFileShort(entry, meta)
 											})
@@ -651,12 +627,12 @@ func main() {
 					log.Println(err)
 					return
 				}
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				tags, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_TAG + node.Alias)
+				tags, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_TAG + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -686,7 +662,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							log.Println("Tagged", os.Args[1], t, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+							log.Println("Tagged", os.Args[2], t, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 						}
 					} else {
 						log.Println("Displaying tags for", meta)
@@ -709,7 +685,7 @@ func main() {
 					return
 				}
 				if !success {
-					shares, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
+					shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + node.Alias)
 					if err != nil {
 						log.Println(err)
 						return
@@ -717,11 +693,7 @@ func main() {
 					err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
 						for _, reference := range entry.Record.Reference {
 							if bytes.Equal(recordHash, reference.RecordHash) {
-								metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + entry.Record.Creator)
-								if err != nil {
-									return err
-								}
-								err = spacego.GetSharedMeta(metas, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+								err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 									if len(os.Args) > 3 {
 										ts := os.Args[3:]
 										log.Println("Tagging", meta.Name, "with", ts)
@@ -744,7 +716,7 @@ func main() {
 											if err != nil {
 												return err
 											}
-											log.Println("Tagged", os.Args[1], t, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+											log.Println("Tagged", os.Args[2], t, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 										}
 									} else {
 										log.Println("Displaying tags for", meta)
@@ -804,13 +776,13 @@ func main() {
 					return
 				}
 
-				files, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_FILE + node.Alias)
+				files, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_FILE + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
 				}
 
-				metas, err := bcgo.OpenChannel(spacego.SPACE_PREFIX_META + node.Alias)
+				metas, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_META + node.Alias)
 				if err != nil {
 					log.Println(err)
 					return
@@ -829,7 +801,6 @@ func main() {
 					if err != nil {
 						return err
 					}
-					log.Println("Mined", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 					references = append(references, reference)
 					return nil
 				})
@@ -883,8 +854,8 @@ func main() {
 
 		log.Println("\tspace customer - display Stripe customer information")
 		log.Println("\tspace subscription - display String subscription information")
-		log.Println("\tspace upload [name] [type] - read stdin and uploads a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
-		log.Println("\tspace upload [name] [type] [file] - read file and uploads a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
+		log.Println("\tspace post [name] [type] - read stdin and posts a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
+		log.Println("\tspace post [name] [type] [file] - read file and posts a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
 
 		log.Println("BC Usage")
 		log.Println("\tbc sync [channel] - synchronizes cache for given channel")
@@ -911,7 +882,7 @@ func ShowFileShort(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 	hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
 	timestamp := bcgo.TimestampToString(entry.Record.Timestamp)
 	size := bcgo.SizeToString(meta.Size)
-	log.Println(hash, timestamp, meta.Name, size, meta.Type)
+	log.Println(hash, timestamp, meta.Name, meta.Type, size)
 	return nil
 }
 
