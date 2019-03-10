@@ -857,7 +857,7 @@ func main() {
 		log.Println("\tspace post [name] [type] - read stdin and posts a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
 		log.Println("\tspace post [name] [type] [file] - read file and posts a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
 
-		log.Println("BC Usage")
+		log.Println("BC Usage:")
 		log.Println("\tbc sync [channel] - synchronizes cache for given channel")
 		log.Println("\tbc head [channel] - display head of given channel")
 		log.Println("\tbc block [channel] [hash] - display block with given hash on given channel")
