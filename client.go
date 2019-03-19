@@ -98,14 +98,16 @@ func main() {
 			count = 0
 			// List files shared with key
 			err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
-				for _, reference := range entry.Record.Reference {
-					err = spacego.GetSharedMeta(entry.Record.Creator, reference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-						count = count + 1
-						return ShowFileShort(entry, meta)
-					})
-					if err != nil {
-						return err
-					}
+				if share.MetaReference == nil {
+					// Meta reference not set
+					return nil
+				}
+				err = spacego.GetSharedMeta(entry.Record.Creator, share.MetaReference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+					count = count + 1
+					return ShowFileShort(entry, meta)
+				})
+				if err != nil {
+					return err
 				}
 				return nil
 			})
@@ -149,14 +151,12 @@ func main() {
 						return
 					}
 					err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
-						for _, reference := range entry.Record.Reference {
-							if bytes.Equal(recordHash, reference.RecordHash) {
-								err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-									return ShowFileLong(entry, meta)
-								})
-								if err != nil {
-									return err
-								}
+						if share.MetaReference != nil && bytes.Equal(recordHash, share.MetaReference.RecordHash) {
+							err = spacego.GetSharedMeta(entry.Record.Creator, share.MetaReference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+								return ShowFileLong(entry, meta)
+							})
+							if err != nil {
+								return err
 							}
 						}
 						return nil
@@ -205,17 +205,19 @@ func main() {
 				count = 0
 				// Show all files shared to key with given mime-type
 				err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
-					for _, reference := range entry.Record.Reference {
-						err = spacego.GetSharedMeta(entry.Record.Creator, reference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-							if meta.Type == os.Args[2] {
-								count = count + 1
-								return ShowFileShort(entry, meta)
-							}
-							return nil
-						})
-						if err != nil {
-							return err
+					if share.MetaReference == nil {
+						// Meta reference not set
+						return nil
+					}
+					err = spacego.GetSharedMeta(entry.Record.Creator, share.MetaReference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+						if meta.Type == os.Args[2] {
+							count = count + 1
+							return ShowFileShort(entry, meta)
 						}
+						return nil
+					})
+					if err != nil {
+						return err
 					}
 					return nil
 				})
@@ -287,26 +289,27 @@ func main() {
 						return
 					}
 					err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
-						for _, reference := range entry.Record.Reference {
-							if bytes.Equal(recordHash, reference.RecordHash) {
-								err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-									for index, reference := range entry.Record.Reference {
-										err := spacego.GetSharedFile(entry.Record.Creator, reference.RecordHash, share.ChunkKey[index], func(entry *bcgo.BlockEntry, data []byte) error {
-											_, err := writer.Write(data)
-											if err != nil {
-												return err
-											}
-											return nil
-										})
+						if share.MetaReference != nil && bytes.Equal(recordHash, share.MetaReference.RecordHash) {
+							log.Println("Share Refs", len(entry.Record.Reference))
+							err = spacego.GetSharedMeta(entry.Record.Creator, share.MetaReference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+								log.Println("Chunk Keys", len(share.ChunkKey))
+								log.Println("Entry Refs", len(entry.Record.Reference))
+								for index, reference := range entry.Record.Reference {
+									err := spacego.GetSharedFile(entry.Record.Creator, reference.RecordHash, share.ChunkKey[index], func(entry *bcgo.BlockEntry, data []byte) error {
+										_, err := writer.Write(data)
 										if err != nil {
 											return err
 										}
+										return nil
+									})
+									if err != nil {
+										return err
 									}
-									return nil
-								})
-								if err != nil {
-									return err
 								}
+								return nil
+							})
+							if err != nil {
+								return err
 							}
 						}
 						return nil
@@ -414,7 +417,15 @@ func main() {
 			}
 			customer, err := financego.GetCustomerSync(customers, node.Alias, node.Key, node.Alias)
 			if err != nil {
+				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 				log.Println(err)
+				log.Println("To register as a Space customer, visit", spacego.SPACE_WEBSITE+"/register?alias="+node.Alias)
+				log.Println("and enter your alias, email, payment info, and public key:")
+				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 				return
 			}
 			log.Println(customer)
@@ -431,15 +442,9 @@ func main() {
 			}
 			subscription, err := financego.GetSubscriptionSync(subscriptions, node.Alias, node.Key, node.Alias)
 			if err != nil {
-				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
 				log.Println(err)
-				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/subscription?alias="+node.Alias, "and")
-				log.Println("enter your alias, email, payment info, and public key:")
-				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
+				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/subscribe?alias="+node.Alias)
+				log.Println("and enter your alias, and customer ID")
 			} else {
 				log.Println(subscription)
 			}
@@ -486,18 +491,20 @@ func main() {
 						}
 					}
 					share := spacego.Share{
+						MetaReference: &bcgo.Reference{
+							Timestamp:   entry.Record.Timestamp,
+							ChannelName: metas.Name,
+							RecordHash:  recordHash,
+						},
 						MetaKey:  key,
 						ChunkKey: chunkKeys,
+						// TODO PreviewReference:
+						// TODO PreviewKey:
 					}
 					data, err := proto.Marshal(&share)
 					if err != nil {
 						return err
 					}
-
-					references := []*bcgo.Reference{&bcgo.Reference{
-						ChannelName: metas.Name,
-						RecordHash:  recordHash,
-					}}
 
 					for _, alias := range recipients {
 						shares, err := bcgo.OpenAndSyncChannel(spacego.SPACE_PREFIX_SHARE + alias)
@@ -513,7 +520,7 @@ func main() {
 							alias:      publicKey,
 							node.Alias: &node.Key.PublicKey,
 						}
-						reference, err := node.Mine(shares, acl, references, data)
+						reference, err := node.Mine(shares, acl, nil, data)
 						if err != nil {
 							return err
 						}
@@ -584,15 +591,13 @@ func main() {
 							for _, reference := range entry.Record.Reference {
 								recordHash := reference.RecordHash
 								err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
-									for _, reference := range entry.Record.Reference {
-										if bytes.Equal(recordHash, reference.RecordHash) {
-											err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-												count = count + 1
-												return ShowFileShort(entry, meta)
-											})
-											if err != nil {
-												return err
-											}
+									if share.MetaReference != nil && bytes.Equal(recordHash, share.MetaReference.RecordHash) {
+										err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+											count = count + 1
+											return ShowFileShort(entry, meta)
+										})
+										if err != nil {
+											return err
 										}
 									}
 									return nil
@@ -691,52 +696,50 @@ func main() {
 						return
 					}
 					err = spacego.GetShare(shares, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
-						for _, reference := range entry.Record.Reference {
-							if bytes.Equal(recordHash, reference.RecordHash) {
-								err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-									if len(os.Args) > 3 {
-										ts := os.Args[3:]
-										log.Println("Tagging", meta.Name, "with", ts)
-										for _, t := range ts {
-											tag := spacego.Tag{
-												Value: t,
-											}
-											data, err := proto.Marshal(&tag)
-											if err != nil {
-												return err
-											}
-											acl := map[string]*rsa.PublicKey{
-												node.Alias: &node.Key.PublicKey,
-											}
-											references := []*bcgo.Reference{&bcgo.Reference{
-												ChannelName: metas.Name,
-												RecordHash:  recordHash,
-											}}
-											reference, err := node.Mine(tags, acl, references, data)
-											if err != nil {
-												return err
-											}
-											log.Println("Tagged", os.Args[2], t, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+						if share.MetaReference != nil && bytes.Equal(recordHash, share.MetaReference.RecordHash) {
+							err = spacego.GetSharedMeta(entry.Record.Creator, recordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+								if len(os.Args) > 3 {
+									ts := os.Args[3:]
+									log.Println("Tagging", meta.Name, "with", ts)
+									for _, t := range ts {
+										tag := spacego.Tag{
+											Value: t,
 										}
-									} else {
-										log.Println("Displaying tags for", meta)
-										err := spacego.GetTag(tags, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, tag *spacego.Tag) error {
-											for _, reference := range entry.Record.Reference {
-												if bytes.Equal(recordHash, reference.RecordHash) {
-													log.Println("\t", tag.Value)
-												}
-											}
-											return nil
-										})
+										data, err := proto.Marshal(&tag)
 										if err != nil {
 											return err
 										}
+										acl := map[string]*rsa.PublicKey{
+											node.Alias: &node.Key.PublicKey,
+										}
+										references := []*bcgo.Reference{&bcgo.Reference{
+											ChannelName: metas.Name,
+											RecordHash:  recordHash,
+										}}
+										reference, err := node.Mine(tags, acl, references, data)
+										if err != nil {
+											return err
+										}
+										log.Println("Tagged", os.Args[2], t, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 									}
-									return nil
-								})
-								if err != nil {
-									return err
+								} else {
+									log.Println("Displaying tags for", meta)
+									err := spacego.GetTag(tags, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, tag *spacego.Tag) error {
+										for _, reference := range entry.Record.Reference {
+											if bytes.Equal(recordHash, reference.RecordHash) {
+												log.Println("\t", tag.Value)
+											}
+										}
+										return nil
+									})
+									if err != nil {
+										return err
+									}
 								}
+								return nil
+							})
+							if err != nil {
+								return err
 							}
 						}
 						return nil
