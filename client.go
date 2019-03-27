@@ -423,7 +423,7 @@ func main() {
 					return
 				}
 				log.Println(err)
-				log.Println("To register as a Space customer, visit", spacego.SPACE_WEBSITE+"/register?alias="+node.Alias)
+				log.Println("To register as a Space customer, visit", spacego.SPACE_WEBSITE+"/space-register?alias="+node.Alias)
 				log.Println("and enter your alias, email, payment info, and public key:")
 				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 				return
@@ -443,7 +443,7 @@ func main() {
 			subscription, err := financego.GetSubscriptionSync(subscriptions, node.Alias, node.Key, node.Alias)
 			if err != nil {
 				log.Println(err)
-				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/subscribe?alias="+node.Alias)
+				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/space-subscribe?alias="+node.Alias)
 				log.Println("and enter your alias, and customer ID")
 			} else {
 				log.Println(subscription)
