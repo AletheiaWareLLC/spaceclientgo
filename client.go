@@ -35,11 +35,11 @@ func main() {
 		// Handle Arguments
 		switch os.Args[1] {
 		case "init":
-			if err := bcgo.AddPeer(spacego.SPACE_HOST); err != nil {
+			if err := bcgo.AddPeer(spacego.GetSpaceHost()); err != nil {
 				log.Println(err)
 				return
 			}
-			if err := bcgo.AddPeer(bcgo.BC_HOST); err != nil {
+			if err := bcgo.AddPeer(bcgo.GetBCHost()); err != nil {
 				log.Println(err)
 				return
 			}
@@ -53,7 +53,7 @@ func main() {
 				log.Println(err)
 				return
 			}
-			alias, err := aliasgo.RegisterAlias(aliases, node.Alias, node.Key)
+			alias, err := aliasgo.RegisterAlias(aliases, spacego.GetSpaceWebsite(), node.Alias, node.Key)
 			if err != nil {
 				log.Println(err)
 				return
@@ -361,7 +361,7 @@ func main() {
 				index := 0
 				size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, references, reader, func(key []byte, record *bcgo.Record) error {
 					index = index + 1
-					reference, err := spacego.PostRecord("file", record)
+					reference, err := spacego.PostRecord(spacego.GetSpaceWebsite(), "file", record)
 					if err != nil {
 						return err
 					}
@@ -394,7 +394,7 @@ func main() {
 					return
 				}
 
-				reference, err := spacego.PostRecord("meta", record)
+				reference, err := spacego.PostRecord(spacego.GetSpaceWebsite(), "meta", record)
 				if err != nil {
 					log.Println(err)
 					return
@@ -423,7 +423,7 @@ func main() {
 					return
 				}
 				log.Println(err)
-				log.Println("To register as a Space customer, visit", spacego.SPACE_WEBSITE+"/space-register?alias="+node.Alias)
+				log.Println("To register as a Space customer, visit", spacego.GetSpaceWebsite()+"/space-register?alias="+node.Alias)
 				log.Println("and enter your alias, email, payment info, and public key:")
 				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
 				return
@@ -443,7 +443,7 @@ func main() {
 			subscription, err := financego.GetSubscriptionSync(subscriptions, node.Alias, node.Key, node.Alias)
 			if err != nil {
 				log.Println(err)
-				log.Println("To subscribe for remote mining, visit", spacego.SPACE_WEBSITE+"/space-subscribe?alias="+node.Alias)
+				log.Println("To subscribe for remote mining, visit", spacego.GetSpaceWebsite()+"/space-subscribe?alias="+node.Alias)
 				log.Println("and enter your alias, and customer ID")
 			} else {
 				log.Println(subscription)
