@@ -415,20 +415,24 @@ func main() {
 				log.Println(err)
 				return
 			}
+			// Get Customer for Alias
 			customer, err := financego.GetCustomerSync(customers, node.Alias, node.Key, node.Alias)
 			if err != nil {
+				log.Println(err)
+			}
+
+			if customer == nil {
 				publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				log.Println(err)
 				log.Println("To register as a Space customer, visit", spacego.GetSpaceWebsite()+"/space-register?alias="+node.Alias)
 				log.Println("and enter your alias, email, payment info, and public key:")
 				log.Println(base64.RawURLEncoding.EncodeToString(publicKeyBytes))
-				return
+			} else {
+				log.Println(customer)
 			}
-			log.Println(customer)
 		case "subscription":
 			node, err := bcgo.GetNode()
 			if err != nil {
@@ -443,6 +447,9 @@ func main() {
 			subscription, err := financego.GetSubscriptionSync(subscriptions, node.Alias, node.Key, node.Alias)
 			if err != nil {
 				log.Println(err)
+			}
+
+			if subscription == nil {
 				log.Println("To subscribe for remote mining, visit", spacego.GetSpaceWebsite()+"/space-subscribe?alias="+node.Alias)
 				log.Println("and enter your alias, and customer ID")
 			} else {
