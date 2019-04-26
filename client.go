@@ -358,9 +358,7 @@ func main() {
 
 				var references []*bcgo.Reference
 
-				index := 0
 				size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, references, reader, func(key []byte, record *bcgo.Record) error {
-					index = index + 1
 					reference, err := spacego.PostRecord(spacego.GetSpaceWebsite(), "file", record)
 					if err != nil {
 						return err
@@ -800,9 +798,7 @@ func main() {
 
 				var references []*bcgo.Reference
 
-				index := 0
 				size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, references, reader, func(key []byte, record *bcgo.Record) error {
-					index = index + 1
 					reference, err := node.MineRecord(files, record)
 					if err != nil {
 						return err
