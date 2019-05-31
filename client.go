@@ -57,7 +57,7 @@ func (c *Client) Init() (*bcgo.Node, error) {
 
 	// Open Alias Channel
 	aliases := aliasgo.OpenAndLoadAliasChannel(c.Cache, c.Network)
-	if err := aliasgo.UniqueAlias(aliases, c.Cache, node.Network, node.Alias); err != nil {
+	if err := aliases.UniqueAlias(c.Cache, node.Alias); err != nil {
 		return nil, err
 	}
 	if err := aliasgo.RegisterAlias(bcgo.GetBCWebsite(), node.Alias, node.Key); err != nil {
@@ -331,7 +331,7 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 		for _, alias := range recipients {
 			shares := spacego.OpenAndLoadShareChannel(alias, c.Cache, c.Network)
 
-			publicKey, err := aliasgo.GetPublicKey(aliases, c.Cache, node.Network, alias)
+			publicKey, err := aliases.GetPublicKey(c.Cache, alias)
 			if err != nil {
 				return err
 			}
