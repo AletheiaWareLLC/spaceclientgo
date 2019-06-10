@@ -811,7 +811,7 @@ func (c *Client) Handle(args []string) {
 
 func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "Space Usage:")
-	fmt.Fprintln(output, "\tspace - print usage")
+	fmt.Fprintln(output, "\tspace - display usage")
 	fmt.Fprintln(output, "\tspace init - initializes environment, generates key pair, and registers alias")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace add [name] [type] - read stdin and mine a new record in blockchain")
@@ -821,8 +821,8 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace add-remote [name] [type] [file] - read file and send a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace list - prints all files created by, or shared with, this key")
-	fmt.Fprintln(output, "\tspace show [hash] - print metadata of file with given hash")
-	fmt.Fprintln(output, "\tspace showall [type] - print metadata of all files with given MIME type")
+	fmt.Fprintln(output, "\tspace show [hash] - display metadata of file with given hash")
+	fmt.Fprintln(output, "\tspace showall [type] - display metadata of all files with given MIME type")
 	fmt.Fprintln(output, "\tspace get [hash] - write file with given hash to stdout")
 	fmt.Fprintln(output, "\tspace get [hash] [file] - write file with given hash to file")
 	fmt.Fprintln(output)
