@@ -876,19 +876,19 @@ func PrintMetaShort(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta
 	hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
 	timestamp := bcgo.TimestampToString(entry.Record.Timestamp)
 	size := bcgo.SizeToString(meta.Size)
-	fmt.Fprintf(output, "%s %s %s %s %s", hash, timestamp, meta.Name, meta.Type, size)
+	fmt.Fprintf(output, "%s %s %s %s %s\n", hash, timestamp, meta.Name, meta.Type, size)
 	return nil
 }
 
 func PrintMetaLong(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-	fmt.Fprintf(output, "Hash: %s", base64.RawURLEncoding.EncodeToString(entry.RecordHash))
-	fmt.Fprintf(output, "Timestamp: %s", bcgo.TimestampToString(entry.Record.Timestamp))
-	fmt.Fprintf(output, "Name: %s", meta.Name)
-	fmt.Fprintf(output, "Type: %s", meta.Type)
-	fmt.Fprintf(output, "Size: %s", bcgo.SizeToString(meta.Size))
-	fmt.Fprintf(output, "Chunks: %d", len(entry.Record.Reference))
+	fmt.Fprintf(output, "Hash: %s\n", base64.RawURLEncoding.EncodeToString(entry.RecordHash))
+	fmt.Fprintf(output, "Timestamp: %s\n", bcgo.TimestampToString(entry.Record.Timestamp))
+	fmt.Fprintf(output, "Name: %s\n", meta.Name)
+	fmt.Fprintf(output, "Type: %s\n", meta.Type)
+	fmt.Fprintf(output, "Size: %s\n", bcgo.SizeToString(meta.Size))
+	fmt.Fprintf(output, "Chunks: %d\n", len(entry.Record.Reference))
 	for index, reference := range entry.Record.Reference {
-		fmt.Fprintf(output, "\t%d: %s", index, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+		fmt.Fprintf(output, "\t%d: %s\n", index, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 	}
 	return nil
 }
