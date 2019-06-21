@@ -694,6 +694,7 @@ func (c *Client) Handle(args []string) {
 	if len(args) > 0 {
 		switch args[0] {
 		case "init":
+			PrintLegalese(os.Stdout)
 			node, err := c.Init()
 			if err != nil {
 				log.Println(err)
@@ -1025,6 +1026,13 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace share [hash] [alias]... - shares file with given hash with given aliases")
 	fmt.Fprintln(output, "\tspace tag [hash] [tag]... - tags file with given hash with given tags")
 	fmt.Fprintln(output, "\tspace search [tag]... - search files for given tags")
+}
+
+func PrintLegalese(output io.Writer) {
+	fmt.Fprintln(output, "SPACE Legalese:")
+	fmt.Fprintln(output, "SPACE is made available by Aletheia Ware LLC [https://aletheiaware.com] under the Terms of Service [https://aletheiaware.com/terms-of-service.html] and Privacy Policy [https://aletheiaware.com/privacy-policy.html].")
+	fmt.Fprintln(output, "This beta version of SPACE is made available under the Beta Test Agreement [https://aletheiaware.com/space-beta-test-agreement.html].")
+	fmt.Fprintln(output, "By continuing to use this software you agree to the Terms of Service, Privacy Policy, and Beta Test Agreement.")
 }
 
 func main() {
