@@ -59,8 +59,7 @@ func (c *Client) Init() (*bcgo.Node, error) {
 	aliases := aliasgo.OpenAliasChannel()
 	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	if err := aliases.UniqueAlias(c.Cache, c.Network, node.Alias); err != nil {
@@ -101,16 +100,15 @@ func (c *Client) Init() (*bcgo.Node, error) {
 func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
 	// TODO compress data
 
-	files := spacego.OpenFileChannel(node.Alias)
-	if err := bcgo.LoadHead(files, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	}
-
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+		log.Println(err)
 	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+
+	files := spacego.OpenFileChannel(node.Alias)
+	if err := bcgo.LoadHead(files, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 
@@ -239,8 +237,7 @@ func (c *Client) List(node *bcgo.Node, callback MetaCallback) error {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
@@ -253,8 +250,7 @@ func (c *Client) ListShared(node *bcgo.Node, callback MetaCallback) error {
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetShare(shares, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
@@ -273,8 +269,7 @@ func (c *Client) Show(node *bcgo.Node, recordHash []byte, callback MetaCallback)
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
@@ -287,8 +282,7 @@ func (c *Client) ShowShared(node *bcgo.Node, recordHash []byte, callback MetaCal
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetShare(shares, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
@@ -306,8 +300,7 @@ func (c *Client) ShowAll(node *bcgo.Node, mime string, callback MetaCallback) er
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
@@ -323,8 +316,7 @@ func (c *Client) ShowAllShared(node *bcgo.Node, mime string, callback MetaCallba
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetShare(shares, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
@@ -351,8 +343,7 @@ func (c *Client) Get(node *bcgo.Node, recordHash []byte, writer io.Writer) (uint
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	if err := spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
@@ -382,8 +373,7 @@ func (c *Client) GetShared(node *bcgo.Node, recordHash []byte, writer io.Writer)
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	if err := spacego.GetShare(shares, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, share *spacego.Share) error {
@@ -417,19 +407,17 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 	aliases := aliasgo.OpenAliasChannel()
 	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	}
-	files := spacego.OpenFileChannel(node.Alias)
-	if err := bcgo.LoadHead(files, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+		log.Println(err)
 	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	files := spacego.OpenFileChannel(node.Alias)
+	if err := bcgo.LoadHead(files, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
@@ -462,8 +450,7 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 			shares := spacego.OpenShareChannel(alias)
 			if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 				log.Println(err)
-			}
-			if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+			} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 				log.Println(err)
 			}
 
@@ -491,16 +478,14 @@ func (c *Client) Search(node *bcgo.Node, terms []string, callback MetaCallback) 
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	if err := spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, nil, func(metaEntry *bcgo.BlockEntry, metaKey []byte, meta *spacego.Meta) error {
 		tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(metaEntry.RecordHash))
 		if err := bcgo.LoadHead(tags, c.Cache, c.Network); err != nil {
 			log.Println(err)
-		}
-		if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
+		} else if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
 			log.Println(err)
 		}
 		return spacego.GetTag(tags, c.Cache, c.Network, node.Alias, node.Key, nil, func(tagEntry *bcgo.BlockEntry, tagKey []byte, tag *spacego.Tag) error {
@@ -522,8 +507,7 @@ func (c *Client) SearchShared(node *bcgo.Node, terms []string, callback MetaCall
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	if err := spacego.GetShare(shares, c.Cache, c.Network, node.Alias, node.Key, nil, func(shareEntry *bcgo.BlockEntry, shareKey []byte, share *spacego.Share) error {
@@ -535,8 +519,7 @@ func (c *Client) SearchShared(node *bcgo.Node, terms []string, callback MetaCall
 			tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(metaEntry.RecordHash))
 			if err := bcgo.LoadHead(tags, c.Cache, c.Network); err != nil {
 				log.Println(err)
-			}
-			if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
+			} else if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
 				log.Println(err)
 			}
 			return spacego.GetTag(tags, c.Cache, c.Network, node.Alias, node.Key, nil, func(tagEntry *bcgo.BlockEntry, tagKey []byte, tag *spacego.Tag) error {
@@ -562,15 +545,13 @@ func (c *Client) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash [
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(recordHash))
 	if err := bcgo.LoadHead(tags, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	var references []*bcgo.Reference
@@ -612,22 +593,19 @@ func (c *Client) TagShared(node *bcgo.Node, listener bcgo.MiningListener, record
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := bcgo.LoadHead(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(metas, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := bcgo.LoadHead(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(shares, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(recordHash))
 	if err := bcgo.LoadHead(tags, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	var references []*bcgo.Reference
@@ -676,8 +654,7 @@ func (c *Client) ShowTag(node *bcgo.Node, recordHash []byte, callback func(entry
 	tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(recordHash))
 	if err := bcgo.LoadHead(tags, c.Cache, c.Network); err != nil {
 		log.Println(err)
-	}
-	if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
+	} else if err := bcgo.Pull(tags, c.Cache, c.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetTag(tags, c.Cache, c.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, tag *spacego.Tag) error {
