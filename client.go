@@ -65,7 +65,7 @@ func (c *Client) Init() (*bcgo.Node, error) {
 	if err := aliases.UniqueAlias(c.Cache, c.Network, node.Alias); err != nil {
 		return nil, err
 	}
-	if err := aliasgo.RegisterAlias(spacego.GetSpaceWebsite(), node.Alias, node.Key); err != nil {
+	if err := aliasgo.RegisterAlias(bcgo.GetBCWebsite(), node.Alias, node.Key); err != nil {
 		log.Println("Could not register alias remotely: ", err)
 		log.Println("Registering locally")
 		// Create record
