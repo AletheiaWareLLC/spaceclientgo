@@ -39,7 +39,7 @@ type Client struct {
 	Network bcgo.Network
 }
 
-func (c *Client) Init() (*bcgo.Node, error) {
+func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 	// Add Space host to peers
 	if err := bcgo.AddPeer(c.Root, spacego.GetSpaceHost()); err != nil {
 		return nil, err
@@ -50,49 +50,17 @@ func (c *Client) Init() (*bcgo.Node, error) {
 		return nil, err
 	}
 
+	// Create Node
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
 		return nil, err
 	}
 
-	// Open Alias Channel
-	aliases := aliasgo.OpenAliasChannel()
-	if err := bcgo.LoadHead(aliases, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	} else if err := bcgo.Pull(aliases, c.Cache, c.Network); err != nil {
-		log.Println(err)
-	}
-	if err := aliases.UniqueAlias(c.Cache, c.Network, node.Alias); err != nil {
+	// Register Alias
+	if err := aliasgo.Register(node, listener); err != nil {
 		return nil, err
 	}
-	if err := aliasgo.RegisterAlias(bcgo.GetBCWebsite(), node.Alias, node.Key); err != nil {
-		log.Println("Could not register alias remotely: ", err)
-		log.Println("Registering locally")
-		// Create record
-		record, err := aliasgo.CreateSignedAliasRecord(node.Alias, node.Key)
-		if err != nil {
-			return nil, err
-		}
 
-		// Write record to cache
-		reference, err := bcgo.WriteRecord(aliasgo.ALIAS, node.Cache, record)
-		if err != nil {
-			return nil, err
-		}
-		log.Println("Wrote Record", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
-
-		// Mine record into blockchain
-		hash, _, err := node.Mine(aliases, &bcgo.PrintingMiningListener{os.Stdout})
-		if err != nil {
-			return nil, err
-		}
-		log.Println("Mined Alias", base64.RawURLEncoding.EncodeToString(hash))
-
-		// Push update to peers
-		if err := bcgo.Push(aliases, node.Cache, node.Network); err != nil {
-			log.Println(err)
-		}
-	}
 	return node, nil
 }
 
@@ -672,7 +640,7 @@ func (c *Client) Handle(args []string) {
 		switch args[0] {
 		case "init":
 			PrintLegalese(os.Stdout)
-			node, err := c.Init()
+			node, err := c.Init(&bcgo.PrintingMiningListener{os.Stdout})
 			if err != nil {
 				log.Println(err)
 				return
