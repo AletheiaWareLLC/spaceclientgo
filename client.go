@@ -86,7 +86,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 
 	var references []*bcgo.Reference
 
-	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, references, reader, func(key []byte, record *bcgo.Record) error {
+	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, reader, func(key []byte, record *bcgo.Record) error {
 		reference, err := bcgo.WriteRecord(files.GetName(), c.Cache, record)
 		if err != nil {
 			return err
@@ -149,7 +149,7 @@ func (c *Client) AddRemote(node *bcgo.Node, name, mime string, reader io.Reader)
 
 	var references []*bcgo.Reference
 
-	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, references, reader, func(key []byte, record *bcgo.Record) error {
+	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, reader, func(key []byte, record *bcgo.Record) error {
 		request, err := spacego.CreateRemoteMiningRequest(spacego.GetSpaceWebsite(), "file", record)
 		if err != nil {
 			return err
@@ -776,7 +776,7 @@ func (c *Client) Handle(args []string) {
 			} else {
 				log.Println("show <file-hash>")
 			}
-		case "showall":
+		case "show-all":
 			if len(args) > 1 {
 				node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 				if err != nil {
@@ -805,7 +805,7 @@ func (c *Client) Handle(args []string) {
 				}
 				log.Println(count, "shared files")
 			} else {
-				log.Println("showall <mime-type>")
+				log.Println("show-all <mime-type>")
 			}
 		case "get":
 			if len(args) > 1 {
@@ -821,7 +821,7 @@ func (c *Client) Handle(args []string) {
 				}
 				writer := os.Stdout
 				if len(args) > 2 {
-					log.Println("Writting to " + args[2])
+					log.Println("Writing to " + args[2])
 					writer, err = os.OpenFile(args[2], os.O_CREATE|os.O_WRONLY, os.ModePerm)
 					if err != nil {
 						log.Println(err)
@@ -845,7 +845,7 @@ func (c *Client) Handle(args []string) {
 				log.Println("Wrote", bcgo.SizeToString(count))
 			} else {
 				log.Println("get <hash> <file>")
-				log.Println("get <hash> (data written to stdout)")
+				log.Println("get <hash> (write to stdout)")
 			}
 		case "share":
 			if len(args) > 1 {
@@ -964,13 +964,14 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace list - prints all files created by, or shared with, this key")
 	fmt.Fprintln(output, "\tspace show [hash] - display metadata of file with given hash")
-	fmt.Fprintln(output, "\tspace showall [type] - display metadata of all files with given MIME type")
+	// TODO fmt.Fprintln(output, "\tspace show-keys [hash] - display keys of file with given hash")
+	fmt.Fprintln(output, "\tspace show-all [type] - display metadata of all files with given MIME type")
 	fmt.Fprintln(output, "\tspace get [hash] - write file with given hash to stdout")
 	fmt.Fprintln(output, "\tspace get [hash] [file] - write file with given hash to file")
 	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tspace share [hash] [alias]... - shares file with given hash with given aliases")
-	fmt.Fprintln(output, "\tspace tag [hash] [tag]... - tags file with given hash with given tags")
-	fmt.Fprintln(output, "\tspace search [tag]... - search files for given tags")
+	fmt.Fprintln(output, "\tspace share [hash] [alias...] - shares file with given hash with given aliases")
+	fmt.Fprintln(output, "\tspace tag [hash] [tag...] - tags file with given hash with given tags")
+	fmt.Fprintln(output, "\tspace search [tag...] - search files for given tags")
 }
 
 func PrintLegalese(output io.Writer) {
