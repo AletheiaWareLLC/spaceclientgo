@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
+	"github.com/AletheiaWareLLC/financego"
 	"github.com/AletheiaWareLLC/spacego"
 	"github.com/golang/protobuf/proto"
 	"io"
@@ -635,6 +636,34 @@ func (c *Client) ShowTag(node *bcgo.Node, recordHash []byte, callback func(entry
 	})
 }
 
+func (c *Client) Registration(merchant string, callback func(*financego.Registration) error) error {
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	if err != nil {
+		return err
+	}
+	registrations := spacego.OpenRegistrationChannel()
+	if err := bcgo.LoadHead(registrations, c.Cache, c.Network); err != nil {
+		log.Println(err)
+	} else if err := bcgo.Pull(registrations, c.Cache, c.Network); err != nil {
+		log.Println(err)
+	}
+	return financego.GetRegistrationAsync(registrations, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, callback)
+}
+
+func (c *Client) Subscription(merchant string, callback func(*financego.Subscription) error) error {
+	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
+	if err != nil {
+		return err
+	}
+	subscriptions := spacego.OpenSubscriptionChannel()
+	if err := bcgo.LoadHead(subscriptions, c.Cache, c.Network); err != nil {
+		log.Println(err)
+	} else if err := bcgo.Pull(subscriptions, c.Cache, c.Network); err != nil {
+		log.Println(err)
+	}
+	return financego.GetSubscriptionAsync(subscriptions, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, "", "", callback)
+}
+
 func (c *Client) Handle(args []string) {
 	if len(args) > 0 {
 		switch args[0] {
@@ -943,6 +972,36 @@ func (c *Client) Handle(args []string) {
 				log.Println("tag <hash> (display file tags)")
 				log.Println("tag <hash> <tag>... (tag file with the given tags)")
 			}
+		case "registration":
+			merchant := ""
+			if len(args) > 1 {
+				merchant = args[1]
+			}
+			count := 0
+			if err := c.Registration(merchant, func(r *financego.Registration) error {
+				log.Println(r)
+				count++
+				return nil
+			}); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(count, "results")
+		case "subscription":
+			merchant := ""
+			if len(args) > 1 {
+				merchant = args[1]
+			}
+			count := 0
+			if err := c.Subscription(merchant, func(s *financego.Subscription) error {
+				log.Println(s)
+				count++
+				return nil
+			}); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(count, "results")
 		default:
 			log.Println("Cannot handle", args[0])
 		}
@@ -972,6 +1031,9 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace share [hash] [alias...] - shares file with given hash with given aliases")
 	fmt.Fprintln(output, "\tspace tag [hash] [tag...] - tags file with given hash with given tags")
 	fmt.Fprintln(output, "\tspace search [tag...] - search files for given tags")
+	fmt.Fprintln(output)
+	fmt.Fprintln(output, "\tspace registration [merchant] - display registration information between this alias and the given merchant")
+	fmt.Fprintln(output, "\tspace subscription [merchant] - display subscription information between this alias and the given merchant")
 }
 
 func PrintLegalese(output io.Writer) {
