@@ -871,7 +871,7 @@ func (c *Client) Handle(args []string) {
 					}
 				}
 
-				log.Println("Wrote", bcgo.SizeToString(count))
+				log.Println("Wrote", bcgo.BinarySizeToString(count))
 			} else {
 				log.Println("get <hash> <file>")
 				log.Println("get <hash> (write to stdout)")
@@ -1087,7 +1087,7 @@ func main() {
 func PrintMetaShort(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 	hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
 	timestamp := bcgo.TimestampToString(entry.Record.Timestamp)
-	size := bcgo.SizeToString(meta.Size)
+	size := bcgo.BinarySizeToString(meta.Size)
 	fmt.Fprintf(output, "%s %s %s %s %s\n", hash, timestamp, meta.Name, meta.Type, size)
 	return nil
 }
@@ -1097,7 +1097,7 @@ func PrintMetaLong(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta)
 	fmt.Fprintf(output, "Timestamp: %s\n", bcgo.TimestampToString(entry.Record.Timestamp))
 	fmt.Fprintf(output, "Name: %s\n", meta.Name)
 	fmt.Fprintf(output, "Type: %s\n", meta.Type)
-	fmt.Fprintf(output, "Size: %s\n", bcgo.SizeToString(meta.Size))
+	fmt.Fprintf(output, "Size: %s\n", bcgo.BinarySizeToString(meta.Size))
 	fmt.Fprintf(output, "Chunks: %d\n", len(entry.Record.Reference))
 	for index, reference := range entry.Record.Reference {
 		fmt.Fprintf(output, "\t%d: %s\n", index, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
