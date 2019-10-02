@@ -144,7 +144,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 }
 
 // Adds file using Remote Mining Service
-func (c *Client) AddRemote(node *bcgo.Node, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
+func (c *Client) AddRemote(node *bcgo.Node, domain, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
 	// TODO compress data
 
 	acl := map[string]*rsa.PublicKey{
@@ -154,7 +154,7 @@ func (c *Client) AddRemote(node *bcgo.Node, name, mime string, reader io.Reader)
 	var references []*bcgo.Reference
 
 	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, reader, func(key []byte, record *bcgo.Record) error {
-		request, err := spacego.CreateRemoteMiningRequest(spacego.GetSpaceWebsite(), "file", record)
+		request, err := spacego.CreateRemoteMiningRequest("https://"+domain, "file", record)
 		if err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func (c *Client) AddRemote(node *bcgo.Node, name, mime string, reader io.Reader)
 		return nil, err
 	}
 
-	request, err := spacego.CreateRemoteMiningRequest(spacego.GetSpaceWebsite(), "meta", record)
+	request, err := spacego.CreateRemoteMiningRequest("https://"+domain, "meta", record)
 	if err != nil {
 		return nil, err
 	}
@@ -793,13 +793,14 @@ func (c *Client) Handle(args []string) {
 					log.Println(err)
 					return
 				}
-				name := args[1]
-				mime := args[2]
+				domain := args[1]
+				name := args[2]
+				mime := args[3]
 				// Read data from system in
 				reader := os.Stdin
-				if len(args) > 3 {
+				if len(args) > 4 {
 					// Read data from file
-					file, err := os.Open(args[3])
+					file, err := os.Open(args[4])
 					if err != nil {
 						log.Println(err)
 						return
@@ -809,15 +810,15 @@ func (c *Client) Handle(args []string) {
 					log.Println("Reading from stdin, use CTRL-D to terminate")
 				}
 
-				reference, err := c.AddRemote(node, name, mime, reader)
+				reference, err := c.AddRemote(node, domain, name, mime, reader)
 				if err != nil {
 					log.Println(err)
 					return
 				}
 				log.Println("Posted metadata", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
 			} else {
-				log.Println("add-remote <name> <mime> <file>")
-				log.Println("add-remote <name> <mime> (data read from stdin)")
+				log.Println("add-remote <domain> <name> <mime> <file>")
+				log.Println("add-remote <domain> <name> <mime> (data read from stdin)")
 			}
 		case "list":
 			node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
@@ -1090,8 +1091,8 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace add [name] [type] - read stdin and mine a new record in blockchain")
 	fmt.Fprintln(output, "\tspace add [name] [type] [file] - read file and mine a new record in blockchain")
 	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tspace add-remote [name] [type] - read stdin and send a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
-	fmt.Fprintln(output, "\tspace add-remote [name] [type] [file] - read file and send a new record to Aletheia Ware's Remote Mining Service for mining into blockchain")
+	fmt.Fprintln(output, "\tspace add-remote [domain] [name] [type] - read stdin and send a new record to domain for remote mining into blockchain")
+	fmt.Fprintln(output, "\tspace add-remote [domain] [name] [type] [file] - read file and send a new record to domain for remote mining into blockchain")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace list - prints all files created by, or shared with, this key")
 	fmt.Fprintln(output, "\tspace show [hash] - display metadata of file with given hash")
