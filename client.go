@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/AletheiaWareLLC/aliasgo"
 	"github.com/AletheiaWareLLC/bcgo"
+	"github.com/AletheiaWareLLC/cryptogo"
 	"github.com/AletheiaWareLLC/financego"
 	"github.com/AletheiaWareLLC/spacego"
 	"github.com/golang/protobuf/proto"
@@ -741,14 +742,14 @@ func (c *Client) Handle(args []string) {
 		switch args[0] {
 		case "init":
 			PrintLegalese(os.Stdout)
-			node, err := c.Init(&bcgo.PrintingMiningListener{os.Stdout})
+			node, err := c.Init(&bcgo.PrintingMiningListener{Output: os.Stdout})
 			if err != nil {
 				log.Println(err)
 				return
 			}
 			log.Println("Initialized")
 			log.Println(node.Alias)
-			publicKeyBytes, err := bcgo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
+			publicKeyBytes, err := cryptogo.RSAPublicKeyToPKIXBytes(&node.Key.PublicKey)
 			if err != nil {
 				log.Println(err)
 				return
@@ -776,7 +777,7 @@ func (c *Client) Handle(args []string) {
 				} else {
 					log.Println("Reading from stdin, use CTRL-D to terminate")
 				}
-				reference, err := c.Add(node, &bcgo.PrintingMiningListener{os.Stdout}, name, mime, reader)
+				reference, err := c.Add(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, name, mime, reader)
 				if err != nil {
 					log.Println(err)
 					return
@@ -962,7 +963,7 @@ func (c *Client) Handle(args []string) {
 					return
 				}
 				recipients := args[2:]
-				if err := c.Share(node, &bcgo.PrintingMiningListener{os.Stdout}, recordHash, recipients); err != nil {
+				if err := c.Share(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, recipients); err != nil {
 					log.Println(err)
 					return
 				}
@@ -1018,14 +1019,14 @@ func (c *Client) Handle(args []string) {
 				if len(args) > 2 {
 					tags := args[2:]
 
-					references, err := c.Tag(node, &bcgo.PrintingMiningListener{os.Stdout}, recordHash, tags)
+					references, err := c.Tag(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, tags)
 					if err != nil {
 						log.Println(err)
 						return
 					}
 
 					if len(references) == 0 {
-						references, err = c.TagShared(node, &bcgo.PrintingMiningListener{os.Stdout}, recordHash, tags)
+						references, err = c.TagShared(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, tags)
 						if err != nil {
 							log.Println(err)
 							return
@@ -1146,7 +1147,7 @@ func main() {
 	}
 
 	// Create network of peers
-	network := &bcgo.TcpNetwork{peers}
+	network := &bcgo.TcpNetwork{Peers: peers}
 
 	client := &Client{
 		Root:    rootDir,
