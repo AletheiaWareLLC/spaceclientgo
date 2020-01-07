@@ -127,7 +127,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 	}
 
 	// Write meta data
-	reference, err := node.Write(metas, acl, references, data)
+	reference, err := node.Write(bcgo.Timestamp(), metas, acl, references, data)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (c *Client) AddRemote(node *bcgo.Node, domain, name, mime string, reader io
 		return nil, err
 	}
 
-	_, record, err := bcgo.CreateRecord(node.Alias, node.Key, acl, references, data)
+	_, record, err := bcgo.CreateRecord(bcgo.Timestamp(), node.Alias, node.Key, acl, references, data)
 	if err != nil {
 		return nil, err
 	}
@@ -478,7 +478,7 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 				alias:      publicKey,
 				node.Alias: &node.Key.PublicKey,
 			}
-			if _, err := node.Write(shares, acl, nil, data); err != nil {
+			if _, err := node.Write(bcgo.Timestamp(), shares, acl, nil, data); err != nil {
 				return err
 			}
 			if _, _, err := node.Mine(shares, listener); err != nil {
@@ -601,7 +601,7 @@ func (c *Client) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash [
 				ChannelName: metas.GetName(),
 				RecordHash:  recordHash,
 			}}
-			reference, err := node.Write(tags, acl, references, data)
+			reference, err := node.Write(bcgo.Timestamp(), tags, acl, references, data)
 			if err != nil {
 				return err
 			}
@@ -662,7 +662,7 @@ func (c *Client) TagShared(node *bcgo.Node, listener bcgo.MiningListener, record
 					acl := map[string]*rsa.PublicKey{
 						node.Alias: &node.Key.PublicKey,
 					}
-					reference, err := node.Write(tags, acl, []*bcgo.Reference{
+					reference, err := node.Write(bcgo.Timestamp(), tags, acl, []*bcgo.Reference{
 						&bcgo.Reference{
 							Timestamp:   entry.Record.Timestamp,
 							ChannelName: metas.GetName(),
