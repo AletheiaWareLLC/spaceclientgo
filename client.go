@@ -104,7 +104,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 	}
 
 	// Mine file channel
-	if _, _, err := node.Mine(files, bcgo.THRESHOLD_STANDARD, listener); err != nil {
+	if _, _, err := node.Mine(files, bcgo.THRESHOLD_I, listener); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +133,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 	}
 
 	// Mine meta channel
-	if _, _, err := node.Mine(metas, bcgo.THRESHOLD_STANDARD, listener); err != nil {
+	if _, _, err := node.Mine(metas, bcgo.THRESHOLD_G, listener); err != nil {
 		return nil, err
 	}
 
@@ -481,7 +481,7 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 			if _, err := node.Write(bcgo.Timestamp(), shares, acl, nil, data); err != nil {
 				return err
 			}
-			if _, _, err := node.Mine(shares, bcgo.THRESHOLD_STANDARD, listener); err != nil {
+			if _, _, err := node.Mine(shares, bcgo.THRESHOLD_G, listener); err != nil {
 				return err
 			}
 		}
@@ -606,7 +606,7 @@ func (c *Client) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash [
 				return err
 			}
 			references = append(references, reference)
-			if _, _, err := node.Mine(tags, bcgo.THRESHOLD_STANDARD, listener); err != nil {
+			if _, _, err := node.Mine(tags, bcgo.THRESHOLD_G, listener); err != nil {
 				return err
 			}
 		}
@@ -673,7 +673,7 @@ func (c *Client) TagShared(node *bcgo.Node, listener bcgo.MiningListener, record
 						return err
 					}
 					references = append(references, reference)
-					if _, _, err := node.Mine(tags, bcgo.THRESHOLD_STANDARD, listener); err != nil {
+					if _, _, err := node.Mine(tags, bcgo.THRESHOLD_G, listener); err != nil {
 						return err
 					}
 				}
