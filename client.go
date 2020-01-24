@@ -92,7 +92,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 	var references []*bcgo.Reference
 
 	size, err := bcgo.CreateRecords(node.Alias, node.Key, acl, nil, reader, func(key []byte, record *bcgo.Record) error {
-		reference, err := bcgo.WriteRecord(files.GetName(), c.Cache, record)
+		reference, err := bcgo.WriteRecord(files.Name, c.Cache, record)
 		if err != nil {
 			return err
 		}
@@ -438,7 +438,7 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 	return spacego.GetMeta(metas, c.Cache, c.Network, node.Alias, node.Key, recordHash, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
 		chunkKeys := make([][]byte, len(entry.Record.Reference))
 		for index, reference := range entry.Record.Reference {
-			if err := bcgo.ReadKey(files.GetName(), files.GetHead(), nil, c.Cache, c.Network, node.Alias, node.Key, reference.RecordHash, func(key []byte) error {
+			if err := bcgo.ReadKey(files.Name, files.Head, nil, c.Cache, c.Network, node.Alias, node.Key, reference.RecordHash, func(key []byte) error {
 				chunkKeys[index] = key
 				return nil
 			}); err != nil {
@@ -598,7 +598,7 @@ func (c *Client) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash [
 			}
 			references := []*bcgo.Reference{&bcgo.Reference{
 				Timestamp:   entry.Record.Timestamp,
-				ChannelName: metas.GetName(),
+				ChannelName: metas.Name,
 				RecordHash:  recordHash,
 			}}
 			reference, err := node.Write(bcgo.Timestamp(), tags, acl, references, data)
@@ -665,7 +665,7 @@ func (c *Client) TagShared(node *bcgo.Node, listener bcgo.MiningListener, record
 					reference, err := node.Write(bcgo.Timestamp(), tags, acl, []*bcgo.Reference{
 						&bcgo.Reference{
 							Timestamp:   entry.Record.Timestamp,
-							ChannelName: metas.GetName(),
+							ChannelName: metas.Name,
 							RecordHash:  recordHash,
 						},
 					}, data)
