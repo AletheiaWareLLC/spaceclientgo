@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/AletheiaWareLLC/aliasgo v0.0.0-20200826222540-04e7ee49a2e1
-	github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914152725-2684a4f8983f
+	github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914163147-39d22605b47f
 	github.com/AletheiaWareLLC/bcgo v0.0.0-20200828203604-98054787682c
 	github.com/AletheiaWareLLC/financego v0.0.0-20200510181222-6dba1296372b
 	github.com/AletheiaWareLLC/spacego v0.0.0-20200914144816-bec436cb351f

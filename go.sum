@@ -1,8 +1,8 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/AletheiaWareLLC/aliasgo v0.0.0-20200826222540-04e7ee49a2e1 h1:wc0pvfE3mJuFj/DnyDHkFgYv4jaIyHGuKNRdtRITnMU=
 github.com/AletheiaWareLLC/aliasgo v0.0.0-20200826222540-04e7ee49a2e1/go.mod h1:TFlPFSQCEt6JrDJg9cebmzhJKlku68PQC1UVeb4c/d4=
-github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914152725-2684a4f8983f h1:ByAZAoKWV9e5oAU5uG2CLwSUkEkAEMf4f328AtLWt80=
-github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914152725-2684a4f8983f/go.mod h1:5MFJtX9fCwpMOCTS6LOvXwbzg6ieEfzI3k9zaDID+u4=
+github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914163147-39d22605b47f h1:vS/37gAlw+s/nQ4U+1uMCrRI7rSWMbttLgd9RH2HPQQ=
+github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914163147-39d22605b47f/go.mod h1:4YVmUyLE+UZr9eLR0ldytXNXmfrtOfVAy69CzNgtQ8c=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200510175557-3a06cf93213b/go.mod h1:falCiDlwEUzPvrhiPrr+lrDcLCx4XRu5YNyj4m6a0aY=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200826221742-dad7042721c9/go.mod h1:G5eoi1AJTc0lJMuOPQN8OsAe/G/8aY6YAzwxbVm+WFc=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200828203604-98054787682c h1:seujlOaL8ksDDzAHF1h29sgf/WAa5CKVGb6mxpfZtz8=

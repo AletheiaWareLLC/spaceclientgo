@@ -33,11 +33,11 @@ import (
 
 type MetaCallback func(entry *bcgo.BlockEntry, meta *spacego.Meta) error
 
-type Client struct {
+type SpaceClient struct {
 	bcclientgo.BCClient
 }
 
-func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
+func (c *SpaceClient) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 	// Add Space hosts to peers
 	for _, host := range spacego.GetSpaceHosts() {
 		if err := bcgo.AddPeer(c.Root, host); err != nil {
@@ -54,7 +54,7 @@ func (c *Client) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 }
 
 // Adds file
-func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
+func (c *SpaceClient) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
 	// TODO compress data
 
 	metas := spacego.OpenMetaChannel(node.Alias)
@@ -127,7 +127,7 @@ func (c *Client) Add(node *bcgo.Node, listener bcgo.MiningListener, name, mime s
 }
 
 // Adds file using Remote Mining Service
-func (c *Client) AddRemote(node *bcgo.Node, domain, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
+func (c *SpaceClient) AddRemote(node *bcgo.Node, domain, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
 	// TODO compress data
 
 	acl := map[string]*rsa.PublicKey{
@@ -188,7 +188,7 @@ func (c *Client) AddRemote(node *bcgo.Node, domain, name, mime string, reader io
 }
 
 // List files owned by key
-func (c *Client) List(node *bcgo.Node, callback MetaCallback) error {
+func (c *SpaceClient) List(node *bcgo.Node, callback MetaCallback) error {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -199,7 +199,7 @@ func (c *Client) List(node *bcgo.Node, callback MetaCallback) error {
 }
 
 // List files shared with key
-func (c *Client) ListShared(node *bcgo.Node, callback MetaCallback) error {
+func (c *SpaceClient) ListShared(node *bcgo.Node, callback MetaCallback) error {
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := shares.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -220,7 +220,7 @@ func (c *Client) ListShared(node *bcgo.Node, callback MetaCallback) error {
 }
 
 // Show file owned by key with given hash
-func (c *Client) Show(node *bcgo.Node, recordHash []byte, callback MetaCallback) error {
+func (c *SpaceClient) Show(node *bcgo.Node, recordHash []byte, callback MetaCallback) error {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -231,7 +231,7 @@ func (c *Client) Show(node *bcgo.Node, recordHash []byte, callback MetaCallback)
 }
 
 // Show file shared to key with given hash
-func (c *Client) ShowShared(node *bcgo.Node, recordHash []byte, callback MetaCallback) error {
+func (c *SpaceClient) ShowShared(node *bcgo.Node, recordHash []byte, callback MetaCallback) error {
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := shares.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -251,7 +251,7 @@ func (c *Client) ShowShared(node *bcgo.Node, recordHash []byte, callback MetaCal
 }
 
 // Show all files owned by key with given mime-type
-func (c *Client) ShowAll(node *bcgo.Node, mime string, callback MetaCallback) error {
+func (c *SpaceClient) ShowAll(node *bcgo.Node, mime string, callback MetaCallback) error {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -265,7 +265,7 @@ func (c *Client) ShowAll(node *bcgo.Node, mime string, callback MetaCallback) er
 }
 
 // Show all files shared to key with given mime-type
-func (c *Client) ShowAllShared(node *bcgo.Node, mime string, callback MetaCallback) error {
+func (c *SpaceClient) ShowAllShared(node *bcgo.Node, mime string, callback MetaCallback) error {
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := shares.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -289,7 +289,7 @@ func (c *Client) ShowAllShared(node *bcgo.Node, mime string, callback MetaCallba
 }
 
 // Get file by given hash
-func (c *Client) Get(node *bcgo.Node, recordHash []byte, writer io.Writer) (uint64, error) {
+func (c *SpaceClient) Get(node *bcgo.Node, recordHash []byte, writer io.Writer) (uint64, error) {
 	count := uint64(0)
 	files := spacego.OpenFileChannel(node.Alias)
 	if err := files.LoadHead(c.Cache, c.Network); err != nil {
@@ -321,7 +321,7 @@ func (c *Client) Get(node *bcgo.Node, recordHash []byte, writer io.Writer) (uint
 }
 
 // Get file shared to key with given hash
-func (c *Client) GetShared(node *bcgo.Node, recordHash []byte, writer io.Writer) (uint64, error) {
+func (c *SpaceClient) GetShared(node *bcgo.Node, recordHash []byte, writer io.Writer) (uint64, error) {
 	count := uint64(0)
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := shares.Refresh(c.Cache, c.Network); err != nil {
@@ -362,7 +362,7 @@ func (c *Client) GetShared(node *bcgo.Node, recordHash []byte, writer io.Writer)
 	return count, nil
 }
 
-func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash []byte, recipients []string) error {
+func (c *SpaceClient) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash []byte, recipients []string) error {
 	aliases := aliasgo.OpenAliasChannel()
 	if err := aliases.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -427,7 +427,7 @@ func (c *Client) Share(node *bcgo.Node, listener bcgo.MiningListener, recordHash
 }
 
 // Search files owned by key
-func (c *Client) Search(node *bcgo.Node, terms []string, callback MetaCallback) error {
+func (c *SpaceClient) Search(node *bcgo.Node, terms []string, callback MetaCallback) error {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -452,7 +452,7 @@ func (c *Client) Search(node *bcgo.Node, terms []string, callback MetaCallback) 
 }
 
 // Search files shared with key
-func (c *Client) SearchShared(node *bcgo.Node, terms []string, callback MetaCallback) error {
+func (c *SpaceClient) SearchShared(node *bcgo.Node, terms []string, callback MetaCallback) error {
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := shares.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -490,7 +490,7 @@ func (c *Client) SearchShared(node *bcgo.Node, terms []string, callback MetaCall
 }
 
 // Tag file owned by key
-func (c *Client) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash []byte, tag []string) ([]*bcgo.Reference, error) {
+func (c *SpaceClient) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash []byte, tag []string) ([]*bcgo.Reference, error) {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -534,7 +534,7 @@ func (c *Client) Tag(node *bcgo.Node, listener bcgo.MiningListener, recordHash [
 }
 
 // Tag file shared with key
-func (c *Client) TagShared(node *bcgo.Node, listener bcgo.MiningListener, recordHash []byte, tag []string) ([]*bcgo.Reference, error) {
+func (c *SpaceClient) TagShared(node *bcgo.Node, listener bcgo.MiningListener, recordHash []byte, tag []string) ([]*bcgo.Reference, error) {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -593,7 +593,7 @@ func (c *Client) TagShared(node *bcgo.Node, listener bcgo.MiningListener, record
 	return references, nil
 }
 
-func (c *Client) ShowTag(node *bcgo.Node, recordHash []byte, callback func(entry *bcgo.BlockEntry, tag *spacego.Tag)) error {
+func (c *SpaceClient) ShowTag(node *bcgo.Node, recordHash []byte, callback func(entry *bcgo.BlockEntry, tag *spacego.Tag)) error {
 	tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(recordHash))
 	if err := tags.Refresh(c.Cache, c.Network); err != nil {
 		log.Println(err)
@@ -608,7 +608,7 @@ func (c *Client) ShowTag(node *bcgo.Node, recordHash []byte, callback func(entry
 	})
 }
 
-func (c *Client) Registration(merchant string, callback func(*financego.Registration) error) error {
+func (c *SpaceClient) Registration(merchant string, callback func(*financego.Registration) error) error {
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
 		return err
@@ -620,7 +620,7 @@ func (c *Client) Registration(merchant string, callback func(*financego.Registra
 	return financego.GetRegistrationAsync(registrations, c.Cache, c.Network, merchant, nil, node.Alias, node.Key, callback)
 }
 
-func (c *Client) Subscription(merchant string, callback func(*financego.Subscription) error) error {
+func (c *SpaceClient) Subscription(merchant string, callback func(*financego.Subscription) error) error {
 	node, err := bcgo.GetNode(c.Root, c.Cache, c.Network)
 	if err != nil {
 		return err
