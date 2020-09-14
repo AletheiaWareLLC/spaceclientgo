@@ -1,11 +1,9 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-github.com/AletheiaWareLLC/aliasgo v0.0.0-20200516185311-d59bf1ba3f32/go.mod h1:Ruk4wvz4IbB70LfLg8VO+CDtXEN4Gf/jqAyankJGGZk=
 github.com/AletheiaWareLLC/aliasgo v0.0.0-20200826222540-04e7ee49a2e1 h1:wc0pvfE3mJuFj/DnyDHkFgYv4jaIyHGuKNRdtRITnMU=
 github.com/AletheiaWareLLC/aliasgo v0.0.0-20200826222540-04e7ee49a2e1/go.mod h1:TFlPFSQCEt6JrDJg9cebmzhJKlku68PQC1UVeb4c/d4=
-github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200826222713-c2a537c975d7 h1:GMqNzRsMCv9NO72vuanTbPNlg1x3aFb7xb2hTuxAuwk=
-github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200826222713-c2a537c975d7/go.mod h1:glcinR3TvH9U0wOzjAtEkhECxhqL8tEMy4aj32PrMM8=
+github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914152725-2684a4f8983f h1:ByAZAoKWV9e5oAU5uG2CLwSUkEkAEMf4f328AtLWt80=
+github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200914152725-2684a4f8983f/go.mod h1:5MFJtX9fCwpMOCTS6LOvXwbzg6ieEfzI3k9zaDID+u4=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200510175557-3a06cf93213b/go.mod h1:falCiDlwEUzPvrhiPrr+lrDcLCx4XRu5YNyj4m6a0aY=
-github.com/AletheiaWareLLC/bcgo v0.0.0-20200516190548-459c1abf38b9/go.mod h1:aqYi4+J1hrcwwPEsqYs0yNSBrnQny3B/LSrvBUKEHEg=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200826221742-dad7042721c9/go.mod h1:G5eoi1AJTc0lJMuOPQN8OsAe/G/8aY6YAzwxbVm+WFc=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200828203604-98054787682c h1:seujlOaL8ksDDzAHF1h29sgf/WAa5CKVGb6mxpfZtz8=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200828203604-98054787682c/go.mod h1:ym3mInCG7CPa7aVqKjcKwz2eTPTXQFZb3sL3xI6zq+A=
@@ -91,7 +89,6 @@ golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5h
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200509044756-6aff5f38e54f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200819171115-d785dc25833f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200828194041-157a740278f4 h1:kCCpuwSAoYJPkNc6x0xT9yTtV4oKtARo4RGBQWOfg9E=
