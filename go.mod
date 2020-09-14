@@ -6,7 +6,6 @@ require (
 	github.com/AletheiaWareLLC/aliasgo v0.0.0-20200826222540-04e7ee49a2e1
 	github.com/AletheiaWareLLC/bcclientgo v0.0.0-20200826222713-c2a537c975d7
 	github.com/AletheiaWareLLC/bcgo v0.0.0-20200828203604-98054787682c
-	github.com/AletheiaWareLLC/cryptogo v0.0.0-20200516185501-ee82a4f19582
 	github.com/AletheiaWareLLC/financego v0.0.0-20200510181222-6dba1296372b
 	github.com/AletheiaWareLLC/spacego v0.0.0-20200914144816-bec436cb351f
 	github.com/davecgh/go-spew v1.1.1 // indirect
