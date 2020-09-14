@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main_test
+package spaceclientgo_test
 
 import (
 	//"github.com/AletheiaWareLLC/bcgo"
