@@ -39,10 +39,19 @@ func main() {
 	// Set log flags
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	client := &spaceclientgo.SpaceClient{
-		BCClient: bcclientgo.BCClient{},
+	peers := bcgo.SplitRemoveEmpty(*peer, ",")
+	if len(peers) == 0 {
+		peers = append(
+			spacego.GetSpaceHosts(), // Add SPACE host as peer
+			bcgo.GetBCHost(),        // Add BC host as peer
+		)
 	}
-	client.SetPeers(bcgo.SplitRemoveEmpty(*peer, ",")...)
+
+	client := &spaceclientgo.SpaceClient{
+		BCClient: bcclientgo.BCClient{
+			Peers: peers,
+		},
+	}
 
 	args := flag.Args()
 
@@ -166,7 +175,7 @@ func main() {
 					return
 				}
 				success := false
-				if err := client.Show(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if err := client.Get(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					success = true
 					return PrintMetaLong(os.Stdout, entry, meta)
 				}); err != nil {
@@ -174,7 +183,7 @@ func main() {
 					return
 				}
 				if !success {
-					if err := client.ShowShared(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+					if err := client.GetShared(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 						return PrintMetaLong(os.Stdout, entry, meta)
 					}); err != nil {
 						log.Println(err)
@@ -193,7 +202,7 @@ func main() {
 				}
 				log.Println("Files:")
 				count := 0
-				if client.ShowAll(node, args[1], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if client.GetAll(node, args[1], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					count += 1
 					return PrintMetaShort(os.Stdout, entry, meta)
 				}); err != nil {
@@ -204,7 +213,7 @@ func main() {
 
 				log.Println("Shared Files:")
 				count = 0
-				if err = client.ShowAllShared(node, args[1], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if err = client.GetAllShared(node, args[1], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					count += 1
 					return PrintMetaShort(os.Stdout, entry, meta)
 				}); err != nil {
@@ -236,14 +245,14 @@ func main() {
 						return
 					}
 				}
-				count, err := client.Get(node, recordHash, writer)
+				count, err := client.Read(node, recordHash, writer)
 				if err != nil {
 					log.Println(err)
 					return
 				}
 
 				if count <= 0 {
-					count, err = client.GetShared(node, recordHash, writer)
+					count, err = client.ReadShared(node, recordHash, writer)
 					if err != nil {
 						log.Println(err)
 						return
@@ -340,7 +349,7 @@ func main() {
 
 					log.Println("Tagged", args[1], references)
 				} else {
-					if err := client.ShowTag(node, recordHash, func(entry *bcgo.BlockEntry, tag *spacego.Tag) {
+					if err := client.GetTag(node, recordHash, func(entry *bcgo.BlockEntry, tag *spacego.Tag) {
 						log.Println(tag.Value)
 					}); err != nil {
 						log.Println(err)
@@ -357,7 +366,7 @@ func main() {
 				merchant = args[1]
 			}
 			count := 0
-			if err := client.Registration(merchant, func(r *financego.Registration) error {
+			if err := client.GetRegistration(merchant, func(r *financego.Registration) error {
 				log.Println(r)
 				count++
 				return nil
@@ -372,7 +381,7 @@ func main() {
 				merchant = args[1]
 			}
 			count := 0
-			if err := client.Subscription(merchant, func(s *financego.Subscription) error {
+			if err := client.GetSubscription(merchant, func(s *financego.Subscription) error {
 				log.Println(s)
 				count++
 				return nil
