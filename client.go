@@ -255,22 +255,24 @@ func (c *SpaceClient) GetShared(node *bcgo.Node, recordHash []byte, callback Met
 	})
 }
 
-// Get all files owned by key with given mime-type
-func (c *SpaceClient) GetAll(node *bcgo.Node, mime string, callback MetaCallback) error {
+// Get all files owned by key with given mime-types
+func (c *SpaceClient) GetAll(node *bcgo.Node, mime []string, callback MetaCallback) error {
 	metas := spacego.OpenMetaChannel(node.Alias)
 	if err := metas.Refresh(node.Cache, node.Network); err != nil {
 		log.Println(err)
 	}
 	return spacego.GetMeta(metas, node.Cache, node.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key []byte, meta *spacego.Meta) error {
-		if meta.Type == mime {
-			return callback(entry, meta)
+		for _, m := range mime {
+			if meta.Type == m {
+				return callback(entry, meta)
+			}
 		}
 		return nil
 	})
 }
 
-// Get all files shared to key with given mime-type
-func (c *SpaceClient) GetAllShared(node *bcgo.Node, mime string, callback MetaCallback) error {
+// Get all files shared to key with given mime-types
+func (c *SpaceClient) GetAllShared(node *bcgo.Node, mime []string, callback MetaCallback) error {
 	shares := spacego.OpenShareChannel(node.Alias)
 	if err := shares.Refresh(node.Cache, node.Network); err != nil {
 		log.Println(err)
@@ -285,8 +287,10 @@ func (c *SpaceClient) GetAllShared(node *bcgo.Node, mime string, callback MetaCa
 			log.Println(err)
 		}
 		return spacego.GetSharedMeta(metas, node.Cache, node.Network, share.MetaReference.RecordHash, share.MetaKey, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-			if meta.Type == mime {
-				return callback(entry, meta)
+			for _, m := range mime {
+				if meta.Type == m {
+					return callback(entry, meta)
+				}
 			}
 			return nil
 		})

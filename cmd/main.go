@@ -202,7 +202,7 @@ func main() {
 				}
 				log.Println("Files:")
 				count := 0
-				if client.GetAll(node, args[1], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if client.GetAll(node, args[1:], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					count += 1
 					return PrintMetaShort(os.Stdout, entry, meta)
 				}); err != nil {
@@ -213,7 +213,7 @@ func main() {
 
 				log.Println("Shared Files:")
 				count = 0
-				if err = client.GetAllShared(node, args[1], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if err = client.GetAllShared(node, args[1:], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					count += 1
 					return PrintMetaShort(os.Stdout, entry, meta)
 				}); err != nil {
