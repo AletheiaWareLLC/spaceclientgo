@@ -39,19 +39,7 @@ func main() {
 	// Set log flags
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	peers := bcgo.SplitRemoveEmpty(*peer, ",")
-	if len(peers) == 0 {
-		peers = append(
-			spacego.GetSpaceHosts(), // Add SPACE host as peer
-			bcgo.GetBCHost(),        // Add BC host as peer
-		)
-	}
-
-	client := &spaceclientgo.SpaceClient{
-		BCClient: bcclientgo.BCClient{
-			Peers: peers,
-		},
-	}
+	client := spaceclientgo.NewSpaceClient(bcgo.SplitRemoveEmpty(*peer, ",")...)
 
 	args := flag.Args()
 

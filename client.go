@@ -37,6 +37,18 @@ type SpaceClient struct {
 	bcclientgo.BCClient
 }
 
+func NewSpaceClient(peers ...string) *SpaceClient {
+	if len(peers) == 0 {
+		peers = append(
+			spacego.GetSpaceHosts(), // Add SPACE host as peer
+			bcgo.GetBCHost(),        // Add BC host as peer
+		)
+	}
+	return &SpaceClient{
+		BCClient: *bcclientgo.NewBCClient(peers...),
+	}
+}
+
 func (c *SpaceClient) Init(listener bcgo.MiningListener) (*bcgo.Node, error) {
 	root, err := c.GetRoot()
 	if err != nil {
