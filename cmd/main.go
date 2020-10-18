@@ -124,28 +124,41 @@ func main() {
 				log.Println("add-remote <domain> <name> <mime> (data read from stdin)")
 			}
 		case "list":
+			var mimes []string
+			if len(args) > 1 {
+				mimes = args[1:]
+			}
+			count := 0
+			callback := func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				success := len(mimes) == 0
+				for _, m := range mimes {
+					if meta.Type == m {
+						success = true
+					}
+				}
+				if !success {
+					return nil
+				}
+				count += 1
+				return PrintMetaShort(os.Stdout, entry, meta)
+			}
+
 			node, err := client.GetNode()
 			if err != nil {
 				log.Println(err)
 				return
 			}
+
 			log.Println("Files:")
-			count := 0
-			if err := client.List(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-				count += 1
-				return PrintMetaShort(os.Stdout, entry, meta)
-			}); err != nil {
+			if err := client.List(node, callback); err != nil {
 				log.Println(err)
 				return
 			}
 			log.Println(count, "files")
 
-			log.Println("Shared Files:")
 			count = 0
-			if err := client.ListShared(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-				count += 1
-				return PrintMetaShort(os.Stdout, entry, meta)
-			}); err != nil {
+			log.Println("Shared Files:")
+			if err := client.ListShared(node, callback); err != nil {
 				log.Println(err)
 				return
 			}
@@ -180,37 +193,6 @@ func main() {
 				}
 			} else {
 				log.Println("show <file-hash>")
-			}
-		case "show-all":
-			if len(args) > 1 {
-				node, err := client.GetNode()
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("Files:")
-				count := 0
-				if client.GetAll(node, args[1:], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-					count += 1
-					return PrintMetaShort(os.Stdout, entry, meta)
-				}); err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println(count, "files")
-
-				log.Println("Shared Files:")
-				count = 0
-				if err = client.GetAllShared(node, args[1:], func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-					count += 1
-					return PrintMetaShort(os.Stdout, entry, meta)
-				}); err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println(count, "shared files")
-			} else {
-				log.Println("show-all <mime-type>")
 			}
 		case "get":
 			if len(args) > 1 {
@@ -399,9 +381,9 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace add-remote [domain] [name] [type] [file] - read file and send a new record to domain for remote mining into blockchain")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace list - prints all files created by, or shared with, this key")
+	fmt.Fprintln(output, "\tspace list [type] - display metadata of all files with given MIME type")
 	fmt.Fprintln(output, "\tspace show [hash] - display metadata of file with given hash")
 	// TODO fmt.Fprintln(output, "\tspace show-keys [hash] - display keys of file with given hash")
-	fmt.Fprintln(output, "\tspace show-all [type] - display metadata of all files with given MIME type")
 	fmt.Fprintln(output, "\tspace get [hash] - write file with given hash to stdout")
 	fmt.Fprintln(output, "\tspace get [hash] [file] - write file with given hash to file")
 	fmt.Fprintln(output)
