@@ -360,6 +360,38 @@ func main() {
 				return
 			}
 			log.Println(count, "results")
+		case "registrars":
+			node, err := client.GetNode()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			count := 0
+			if err := client.GetRegistrarsForNode(node, func(a *spacego.Registrar, r *financego.Registration, s *financego.Subscription) error {
+				log.Println(a, r, s)
+				count++
+				return nil
+			}); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(count, "results")
+		case "miners":
+			node, err := client.GetNode()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			count := 0
+			if err := client.GetMinersForNode(node, func(m *spacego.Miner, r *financego.Registration, s *financego.Subscription) error {
+				log.Println(m, r, s)
+				count++
+				return nil
+			}); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(count, "results")
 		default:
 			log.Println("Cannot handle", args[0])
 		}
@@ -393,6 +425,9 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace registration [merchant] - display registration information between this alias and the given merchant")
 	fmt.Fprintln(output, "\tspace subscription [merchant] - display subscription information between this alias and the given merchant")
+	fmt.Fprintln(output)
+	fmt.Fprintln(output, "\tspace registrars - display registration and subscription information of this alias' registrars")
+	fmt.Fprintln(output, "\tspace miners - display registration and subscription information of this alias' miners")
 }
 
 func PrintLegalese(output io.Writer) {
