@@ -9,8 +9,8 @@ github.com/AletheiaWareLLC/bcgo v0.0.0-20200510175557-3a06cf93213b/go.mod h1:fal
 github.com/AletheiaWareLLC/bcgo v0.0.0-20200826221742-dad7042721c9/go.mod h1:G5eoi1AJTc0lJMuOPQN8OsAe/G/8aY6YAzwxbVm+WFc=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20201021001123-35bd5cc1e539 h1:TMdtHs5uIG0Om6NRPma094i5RfKsGu95zPJBHUbDruw=
 github.com/AletheiaWareLLC/bcgo v0.0.0-20201021001123-35bd5cc1e539/go.mod h1:ym3mInCG7CPa7aVqKjcKwz2eTPTXQFZb3sL3xI6zq+A=
-github.com/AletheiaWareLLC/bcgo v0.0.0-20201101195211-883b0688af37 h1:SDQbraFVYc/GoMfX1PrDCNiZNbepxYpqTWDKGbI/7RY=
-github.com/AletheiaWareLLC/bcgo v0.0.0-20201101195211-883b0688af37/go.mod h1:VsBZIx6j/X1AqJd8CJgJGOkDZTog9PzdbYZzIadAQ8U=
+github.com/AletheiaWareLLC/bcgo v0.0.0-20201102234723-8c30ed9b4c80 h1:bxVbpZDMzv+TAXitKmE494IOgeygjO0563V1KPeSV5k=
+github.com/AletheiaWareLLC/bcgo v0.0.0-20201102234723-8c30ed9b4c80/go.mod h1:VsBZIx6j/X1AqJd8CJgJGOkDZTog9PzdbYZzIadAQ8U=
 github.com/AletheiaWareLLC/cryptogo v0.0.0-20200510174953-0e615f98810e/go.mod h1:5xGQjA12qwjNFD8AvA5Ml7AaxeZaRJayrAoWCOcn2pw=
 github.com/AletheiaWareLLC/cryptogo v0.0.0-20200516185501-ee82a4f19582/go.mod h1:SWcV7qGsxDonWxTCL8AB7M/rjpjNzmEk45adPrUtrYM=
 github.com/AletheiaWareLLC/cryptogo v0.0.0-20201018124538-00695772412e h1:YvNGi8xae8oX56RpNJ+mV4cnEUxkmHUm0uJKjVCD8a8=
@@ -111,6 +111,8 @@ golang.org/x/sys v0.0.0-20201020230747-6e5568b54d1a h1:e3IU37lwO4aq3uoRKINC7Jiko
 golang.org/x/sys v0.0.0-20201020230747-6e5568b54d1a/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 h1:a/mKvvZr9Jcc8oKfcmgzyp7OwF73JPWsQLvH1z2Kxck=
 golang.org/x/sys v0.0.0-20201101102859-da207088b7d1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20201106081118-db71ae66460a h1:ALUFBKlIyeY7y5ZgPJmblk/vKz+zBQSnNiPkt41sgeg=
+golang.org/x/sys v0.0.0-20201106081118-db71ae66460a/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.3 h1:cokOdA+Jmi5PJGXLlLllQSgYigAEfHXJAERHVMaCc2k=
