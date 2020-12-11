@@ -28,6 +28,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 var peer = flag.String("peer", "", "Space peer")
@@ -89,40 +90,6 @@ func main() {
 				log.Println("add <name> <mime> <file>")
 				log.Println("add <name> <mime> (data read from stdin)")
 			}
-		case "add-remote":
-			if len(args) > 2 {
-				node, err := client.GetNode()
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				domain := args[1]
-				name := args[2]
-				mime := args[3]
-				// Read data from system in
-				reader := os.Stdin
-				if len(args) > 4 {
-					// Read data from file
-					file, err := os.Open(args[4])
-					if err != nil {
-						log.Println(err)
-						return
-					}
-					reader = file
-				} else {
-					log.Println("Reading from stdin, use CTRL-D to terminate")
-				}
-
-				reference, err := client.AddRemote(node, domain, name, mime, reader)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("Posted metadata", base64.RawURLEncoding.EncodeToString(reference.RecordHash))
-			} else {
-				log.Println("add-remote <domain> <name> <mime> <file>")
-				log.Println("add-remote <domain> <name> <mime> (data read from stdin)")
-			}
 		case "list":
 			var mimes []string
 			if len(args) > 1 {
@@ -140,7 +107,7 @@ func main() {
 					return nil
 				}
 				count += 1
-				return PrintMetaShort(os.Stdout, entry, meta)
+				return PrintMeta(os.Stdout, entry, meta)
 			}
 
 			node, err := client.GetNode()
@@ -155,14 +122,6 @@ func main() {
 				return
 			}
 			log.Println(count, "files")
-
-			count = 0
-			log.Println("Shared Files:")
-			if err := client.ListShared(node, callback); err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println(count, "shared files")
 		case "show":
 			if len(args) > 1 {
 				node, err := client.GetNode()
@@ -175,21 +134,11 @@ func main() {
 					log.Println(err)
 					return
 				}
-				success := false
-				if err := client.Get(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-					success = true
-					return PrintMetaLong(os.Stdout, entry, meta)
+				if err := client.GetMeta(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+					return PrintMeta(os.Stdout, entry, meta)
 				}); err != nil {
 					log.Println(err)
 					return
-				}
-				if !success {
-					if err := client.GetShared(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-						return PrintMetaLong(os.Stdout, entry, meta)
-					}); err != nil {
-						log.Println(err)
-						return
-					}
 				}
 			} else {
 				log.Println("show <file-hash>")
@@ -215,44 +164,54 @@ func main() {
 						return
 					}
 				}
-				count, err := client.Read(node, recordHash, writer)
+				count, err := client.ReadFile(node, recordHash, writer)
 				if err != nil {
 					log.Println(err)
 					return
 				}
 
-				if count <= 0 {
-					count, err = client.ReadShared(node, recordHash, writer)
-					if err != nil {
-						log.Println(err)
-						return
-					}
-				}
-
-				log.Println("Wrote", bcgo.BinarySizeToString(count))
+				log.Println("Wrote", bcgo.BinarySizeToString(uint64(count)))
 			} else {
 				log.Println("get <hash> <file>")
 				log.Println("get <hash> (write to stdout)")
 			}
-		case "share":
+		case "get-all":
 			if len(args) > 1 {
 				node, err := client.GetNode()
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				recordHash, err := base64.RawURLEncoding.DecodeString(args[1])
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				recipients := args[2:]
-				if err := client.Share(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, recipients); err != nil {
+				if err := client.List(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+					hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
+					dir := filepath.Join(args[1], hash)
+					if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+						return err
+					}
+					ext, err := getExtension(meta.Type)
+					if err != nil {
+						return err
+					}
+					path := filepath.Join(dir, meta.Name+"."+ext)
+					if _, err := os.Stat(path); os.IsNotExist(err) {
+						log.Println("Writing to " + path)
+						writer, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+						if err != nil {
+							return err
+						}
+						count, err := client.ReadFile(node, entry.RecordHash, writer)
+						if err != nil {
+							return err
+						}
+						log.Println("Wrote", bcgo.BinarySizeToString(uint64(count)))
+					}
+					return nil
+				}); err != nil {
 					log.Println(err)
 					return
 				}
 			} else {
-				log.Println("share <hash> <alias>... (share file with the given aliases)")
+				log.Println("get-all <directory>")
 			}
 		case "search":
 			// search metas by tag
@@ -268,23 +227,12 @@ func main() {
 				count := 0
 				if client.Search(node, ts, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					count += 1
-					return PrintMetaShort(os.Stdout, entry, meta)
+					return PrintMeta(os.Stdout, entry, meta)
 				}); err != nil {
 					log.Println(err)
 					return
 				}
 				log.Println(count, "files")
-
-				log.Println("Shared Files:")
-				count = 0
-				if err = client.SearchShared(node, ts, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-					count += 1
-					return PrintMetaShort(os.Stdout, entry, meta)
-				}); err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println(count, "shared files")
 			} else {
 				log.Println("search <tag>... (search files by tags)")
 			}
@@ -303,18 +251,10 @@ func main() {
 				if len(args) > 2 {
 					tags := args[2:]
 
-					references, err := client.Tag(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, tags)
+					references, err := client.AddTag(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, tags)
 					if err != nil {
 						log.Println(err)
 						return
-					}
-
-					if len(references) == 0 {
-						references, err = client.TagShared(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash, tags)
-						if err != nil {
-							log.Println(err)
-							return
-						}
 					}
 
 					log.Println("Tagged", args[1], references)
@@ -376,22 +316,6 @@ func main() {
 				return
 			}
 			log.Println(count, "results")
-		case "miners":
-			node, err := client.GetNode()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			count := 0
-			if err := client.GetMinersForNode(node, func(m *spacego.Miner, r *financego.Registration, s *financego.Subscription) error {
-				log.Println(m, r, s)
-				count++
-				return nil
-			}); err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println(count, "results")
 		default:
 			log.Println("Cannot handle", args[0])
 		}
@@ -409,17 +333,14 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace add [name] [type] [file] - read file and mine a new record into blockchain")
 	// TODO fmt.Fprintln(output, "\tspace add-directory [directory] - read all files in directory and mine new records into blockchain")
 	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tspace add-remote [domain] [name] [type] - read stdin and send a new record to domain for remote mining into blockchain")
-	fmt.Fprintln(output, "\tspace add-remote [domain] [name] [type] [file] - read file and send a new record to domain for remote mining into blockchain")
-	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tspace list - prints all files created by, or shared with, this key")
+	fmt.Fprintln(output, "\tspace list - prints all files created by this key")
 	fmt.Fprintln(output, "\tspace list [type] - display metadata of all files with given MIME type")
 	fmt.Fprintln(output, "\tspace show [hash] - display metadata of file with given hash")
 	// TODO fmt.Fprintln(output, "\tspace show-keys [hash] - display keys of file with given hash")
 	fmt.Fprintln(output, "\tspace get [hash] - write file with given hash to stdout")
 	fmt.Fprintln(output, "\tspace get [hash] [file] - write file with given hash to file")
+	fmt.Fprintln(output, "\tspace get-all [directory] - write all files to given directory")
 	fmt.Fprintln(output)
-	fmt.Fprintln(output, "\tspace share [hash] [alias...] - shares file with given hash with given aliases")
 	fmt.Fprintln(output, "\tspace tag [hash] [tag...] - tags file with given hash with given tags")
 	fmt.Fprintln(output, "\tspace search [tag...] - search files for given tags")
 	fmt.Fprintln(output)
@@ -427,33 +348,30 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace subscription [merchant] - display subscription information between this alias and the given merchant")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace registrars - display registration and subscription information of this alias' registrars")
-	fmt.Fprintln(output, "\tspace miners - display registration and subscription information of this alias' miners")
 }
 
 func PrintLegalese(output io.Writer) {
-	fmt.Fprintln(output, "SPACE Legalese:")
-	fmt.Fprintln(output, "SPACE is made available by Aletheia Ware LLC [https://aletheiaware.com] under the Terms of Service [https://aletheiaware.com/terms-of-service.html] and Privacy Policy [https://aletheiaware.com/privacy-policy.html].")
-	fmt.Fprintln(output, "This beta version of SPACE is made available under the Beta Test Agreement [https://aletheiaware.com/space-beta-test-agreement.html].")
+	fmt.Fprintln(output, "S P A C E Legalese:")
+	fmt.Fprintln(output, "S P A C E is made available by Aletheia Ware LLC [https://aletheiaware.com] under the Terms of Service [https://aletheiaware.com/terms-of-service.html] and Privacy Policy [https://aletheiaware.com/privacy-policy.html].")
+	fmt.Fprintln(output, "This beta version of S P A C E is made available under the Beta Test Agreement [https://aletheiaware.com/space-beta-test-agreement.html].")
 	fmt.Fprintln(output, "By continuing to use this software you agree to the Terms of Service, Privacy Policy, and Beta Test Agreement.")
 }
 
-func PrintMetaShort(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+func PrintMeta(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 	hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
 	timestamp := bcgo.TimestampToString(entry.Record.Timestamp)
-	size := bcgo.BinarySizeToString(meta.Size)
-	fmt.Fprintf(output, "%s %s %s %s %s\n", hash, timestamp, meta.Name, meta.Type, size)
+	fmt.Fprintf(output, "%s %s %s %s\n", hash, timestamp, meta.Name, meta.Type)
 	return nil
 }
 
-func PrintMetaLong(output io.Writer, entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-	fmt.Fprintf(output, "Hash: %s\n", base64.RawURLEncoding.EncodeToString(entry.RecordHash))
-	fmt.Fprintf(output, "Timestamp: %s\n", bcgo.TimestampToString(entry.Record.Timestamp))
-	fmt.Fprintf(output, "Name: %s\n", meta.Name)
-	fmt.Fprintf(output, "Type: %s\n", meta.Type)
-	fmt.Fprintf(output, "Size: %s\n", bcgo.BinarySizeToString(meta.Size))
-	fmt.Fprintf(output, "Chunks: %d\n", len(entry.Record.Reference))
-	for index, reference := range entry.Record.Reference {
-		fmt.Fprintf(output, "\t%d: %s\n", index, base64.RawURLEncoding.EncodeToString(reference.RecordHash))
+func getExtension(mime string) (string, error) {
+	switch mime {
+	case spacego.MIME_TYPE_IMAGE_JPG, spacego.MIME_TYPE_IMAGE_JPEG:
+		return "jpg", nil
+	case spacego.MIME_TYPE_TEXT_PLAIN:
+		return "txt", nil
+	case spacego.MIME_TYPE_VIDEO_MPEG:
+		return "mpg", nil
 	}
-	return nil
+	return "", fmt.Errorf("Unrecognized Mime: %s", mime)
 }

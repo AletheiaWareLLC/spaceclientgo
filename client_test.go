@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aletheia Ware LLC
+ * Copyright 2019-2020 Aletheia Ware LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,63 @@
 package spaceclientgo_test
 
 import (
-	//"github.com/AletheiaWareLLC/bcgo"
-	//"github.com/AletheiaWareLLC/spaceclientgo"
-	//"github.com/AletheiaWareLLC/testinggo"
+	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/base64"
+	"github.com/AletheiaWareLLC/bcgo"
+	"github.com/AletheiaWareLLC/spaceclientgo"
+	"github.com/AletheiaWareLLC/spacego"
+	"github.com/AletheiaWareLLC/testinggo"
+	"log"
+	"strings"
 	"testing"
 )
+
+func assertFile(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, metaId []byte, length int, content string) {
+	t.Helper()
+	var buf bytes.Buffer
+	count, err := c.ReadFile(n, metaId, &buf)
+	testinggo.AssertNoError(t, err)
+	log.Println("File", count, buf.String())
+	if count != length {
+		t.Fatalf("Incorrect length; expected '%d', got '%d'", length, count)
+	}
+	actual := buf.String()
+	if actual != content {
+		t.Fatalf("Incorrect content; expected '%s', got '%s", content, actual)
+	}
+}
+
+func assertMeta(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, name, mime string) {
+	t.Helper()
+	var metas []*spacego.Meta
+	testinggo.AssertNoError(t, c.List(n, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+		metas = append(metas, meta)
+		return nil
+	}))
+	if len(metas) != 1 {
+		t.Fatalf("Expected a meta")
+	}
+	meta := metas[0]
+	if name != meta.Name {
+		t.Fatalf("Incorrect name; expected '%s', got '%s'", name, meta.Name)
+	}
+	if mime != meta.Type {
+		t.Fatalf("Incorrect mime; expected '%s', got '%s'", mime, meta.Type)
+	}
+}
+
+func makeNode(t *testing.T, a string, key *rsa.PrivateKey, cache bcgo.Cache, network bcgo.Network) *bcgo.Node {
+	t.Helper()
+	return &bcgo.Node{
+		Alias:    a,
+		Key:      key,
+		Cache:    cache,
+		Network:  network,
+		Channels: make(map[string]*bcgo.Channel),
+	}
+}
 
 func TestClientInit(t *testing.T) {
 	// TODO set ROOT_DIRECTORY, ALIAS env
@@ -40,66 +92,155 @@ func TestClientInit(t *testing.T) {
 	*/
 }
 
-func TestClientAdd(t *testing.T) {
-	// TODO
+func TestClient_Add_and_ReadFile(t *testing.T) {
+	alias := "Tester"
+	key, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		t.Error("Could not generate key:", err)
+	}
+	cache := bcgo.NewMemoryCache(10)
+	node := makeNode(t, alias, key, cache, nil)
+	client := &spaceclientgo.SpaceClient{}
+	name := "test"
+	mime := "text/plain"
+	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing"))
+	testinggo.AssertNoError(t, err)
+
+	assertMeta(t, client, node, name, mime)
+	assertFile(t, client, node, ref.RecordHash, 7, "testing")
 }
 
-func TestClientAddRemote(t *testing.T) {
-	// TODO
+func TestClient_Append_and_ReadFile(t *testing.T) {
+	alias := "Tester"
+	key, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		t.Error("Could not generate key:", err)
+	}
+	cache := bcgo.NewMemoryCache(10)
+	node := makeNode(t, alias, key, cache, nil)
+	client := &spaceclientgo.SpaceClient{}
+	name := "test"
+	mime := "text/plain"
+	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing"))
+	testinggo.AssertNoError(t, err)
+
+	assertMeta(t, client, node, name, mime)
+	assertFile(t, client, node, ref.RecordHash, 7, "testing")
+
+	metaId := base64.RawURLEncoding.EncodeToString(ref.RecordHash)
+	deltas := spacego.OpenDeltaChannel(metaId)
+	testinggo.AssertNoError(t, deltas.LoadCachedHead(node.Cache))
+
+	acl := map[string]*rsa.PublicKey{
+		alias: &key.PublicKey,
+	}
+
+	testinggo.AssertNoError(t, client.Append(node, nil, deltas, acl, &spacego.Delta{
+		Offset: 4,
+		Remove: 3,
+		Add:    []byte("foobar"),
+	}))
+	assertFile(t, client, node, ref.RecordHash, 10, "testfoobar")
+
+	testinggo.AssertNoError(t, client.Append(node, nil, deltas, acl, &spacego.Delta{
+		Remove: 7,
+	}))
+	assertFile(t, client, node, ref.RecordHash, 3, "bar")
 }
 
 func TestClientList(t *testing.T) {
-	// TODO
+	alias := "Tester"
+	key, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		t.Error("Could not generate key:", err)
+	}
+	cache := bcgo.NewMemoryCache(10)
+	node := makeNode(t, alias, key, cache, nil)
+	client := &spaceclientgo.SpaceClient{}
+	name0 := "test0"
+	mime0 := "text/plain"
+	ref0, err := client.Add(node, nil, name0, mime0, strings.NewReader("testing0"))
+	testinggo.AssertNoError(t, err)
+
+	name1 := "test1"
+	mime1 := "text/plain"
+	ref1, err := client.Add(node, nil, name1, mime1, strings.NewReader("testing1"))
+	testinggo.AssertNoError(t, err)
+
+	results := make(map[string]*spacego.Meta)
+	testinggo.AssertNoError(t, client.List(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+		results[base64.RawURLEncoding.EncodeToString(entry.RecordHash)] = meta
+		return nil
+	}))
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 results")
+	}
+	meta0 := results[base64.RawURLEncoding.EncodeToString(ref0.RecordHash)]
+	if name0 != meta0.Name {
+		t.Fatalf("Incorrect name; expected '%s', got '%s'", name0, meta0.Name)
+	}
+	if mime0 != meta0.Type {
+		t.Fatalf("Incorrect mime; expected '%s', got '%s'", mime0, meta0.Type)
+	}
+	meta1 := results[base64.RawURLEncoding.EncodeToString(ref1.RecordHash)]
+	if name1 != meta1.Name {
+		t.Fatalf("Incorrect name; expected '%s', got '%s'", name1, meta1.Name)
+	}
+	if mime1 != meta1.Type {
+		t.Fatalf("Incorrect mime; expected '%s', got '%s'", mime1, meta1.Type)
+	}
 }
 
-func TestClientListShared(t *testing.T) {
-	// TODO
-}
-
-func TestClientShow(t *testing.T) {
-	// TODO
-}
-
-func TestClientShowShared(t *testing.T) {
-	// TODO
-}
-
-func TestClientShowAll(t *testing.T) {
-	// TODO
-}
-
-func TestClientShowAllShared(t *testing.T) {
-	// TODO
-}
-
-func TestClientGet(t *testing.T) {
-	// TODO
-}
-
-func TestClientGetShared(t *testing.T) {
-	// TODO
+func TestClientGetMeta(t *testing.T) {
+	alias := "Tester"
+	key, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		t.Error("Could not generate key:", err)
+	}
+	cache := bcgo.NewMemoryCache(10)
+	node := makeNode(t, alias, key, cache, nil)
+	client := &spaceclientgo.SpaceClient{}
+	name := "test"
+	mime := "text/plain"
+	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing"))
+	testinggo.AssertNoError(t, err)
+	var metas []*spacego.Meta
+	testinggo.AssertNoError(t, client.GetMeta(node, ref.RecordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+		metas = append(metas, meta)
+		return nil
+	}))
+	if len(metas) != 1 {
+		t.Fatalf("Expected a meta")
+	}
+	meta := metas[0]
+	if name != meta.Name {
+		t.Fatalf("Incorrect name; expected '%s', got '%s'", name, meta.Name)
+	}
+	if mime != meta.Type {
+		t.Fatalf("Incorrect mime; expected '%s', got '%s'", mime, meta.Type)
+	}
 }
 
 func TestClientSearch(t *testing.T) {
 	// TODO
 }
 
-func TestClientSearchShared(t *testing.T) {
+func TestClientAddTag(t *testing.T) {
 	// TODO
 }
 
-func TestClientShare(t *testing.T) {
+func TestClientGetTag(t *testing.T) {
 	// TODO
 }
 
-func TestClientTag(t *testing.T) {
+func TestClientGetRegistration(t *testing.T) {
 	// TODO
 }
 
-func TestClientTagShared(t *testing.T) {
+func TestClientGetSubscription(t *testing.T) {
 	// TODO
 }
 
-func TestClientShowTag(t *testing.T) {
+func TestClientGetRegistrarsForNode(t *testing.T) {
 	// TODO
 }
