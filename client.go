@@ -117,13 +117,13 @@ func (c *SpaceClient) Add(node *bcgo.Node, listener bcgo.MiningListener, name, m
 
 	var last uint64
 	// Read data, create deltas, and write to cache
-	if err := spacego.CreateDeltaRecords(reader, spacego.MAX_SIZE_BYTES, func(delta *spacego.Delta) error {
+	if err := spacego.CreateDeltas(reader, spacego.MAX_SIZE_BYTES, func(delta *spacego.Delta) error {
 		data, err := proto.Marshal(delta)
 		if err != nil {
 			return err
 		}
 		timestamp := bcgo.Timestamp()
-		// TODO ensure timestamp is greater than previous to ensure deltas (sorted by timestamp) don't get out of order
+		// Ensure timestamp is greater than previous to ensure deltas (sorted by timestamp) don't get out of order
 		for last == timestamp {
 			timestamp = bcgo.Timestamp()
 		}
