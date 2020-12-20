@@ -19,8 +19,8 @@ set -x
 
 go fmt $GOPATH/src/github.com/AletheiaWareLLC/spaceclientgo/...
 go test $GOPATH/src/github.com/AletheiaWareLLC/spaceclientgo/...
-env GOOS=darwin GOARCH=386 go build -o $GOPATH/bin/spaceclientgo-darwin-386 github.com/AletheiaWareLLC/spaceclientgo/cmd
 env GOOS=darwin GOARCH=amd64 go build -o $GOPATH/bin/spaceclientgo-darwin-amd64 github.com/AletheiaWareLLC/spaceclientgo/cmd
+# TODO env GOOS=darwin GOARCH=arm64 go build -o $GOPATH/bin/spaceclientgo-darwin-arm64 github.com/AletheiaWareLLC/spaceclientgo/cmd
 env GOOS=linux GOARCH=386 go build -o $GOPATH/bin/spaceclientgo-linux-386 github.com/AletheiaWareLLC/spaceclientgo/cmd
 env GOOS=linux GOARCH=amd64 go build -o $GOPATH/bin/spaceclientgo-linux-amd64 github.com/AletheiaWareLLC/spaceclientgo/cmd
 env GOOS=linux GOARCH=arm GOARM=5 go build -o $GOPATH/bin/spaceclientgo-linux-arm5 github.com/AletheiaWareLLC/spaceclientgo/cmd
