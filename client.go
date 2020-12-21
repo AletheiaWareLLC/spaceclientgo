@@ -96,7 +96,7 @@ func (c *SpaceClient) Add(node *bcgo.Node, listener bcgo.MiningListener, name, m
 	}
 
 	// Mine meta channel
-	if _, _, err := node.Mine(metas, bcgo.THRESHOLD_Z, listener); err != nil {
+	if _, _, err := node.Mine(metas, spacego.THRESHOLD, listener); err != nil {
 		return nil, err
 	}
 
@@ -141,7 +141,7 @@ func (c *SpaceClient) Add(node *bcgo.Node, listener bcgo.MiningListener, name, m
 	}
 
 	// Mine file channel
-	if _, _, err := node.Mine(deltas, bcgo.THRESHOLD_Z, listener); err != nil {
+	if _, _, err := node.Mine(deltas, spacego.THRESHOLD, listener); err != nil {
 		return nil, err
 	}
 
@@ -170,7 +170,7 @@ func (c *SpaceClient) Append(node *bcgo.Node, listener bcgo.MiningListener, delt
 		return err
 	}
 	// Mine file channel
-	if _, _, err := node.Mine(deltas, bcgo.THRESHOLD_Z, listener); err != nil {
+	if _, _, err := node.Mine(deltas, spacego.THRESHOLD, listener); err != nil {
 		return err
 	}
 
@@ -280,7 +280,7 @@ func (c *SpaceClient) AddTag(node *bcgo.Node, listener bcgo.MiningListener, meta
 				return err
 			}
 			references = append(references, reference)
-			if _, _, err := node.Mine(tags, bcgo.THRESHOLD_Z, listener); err != nil {
+			if _, _, err := node.Mine(tags, spacego.THRESHOLD, listener); err != nil {
 				return err
 			}
 		}
