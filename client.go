@@ -17,14 +17,14 @@
 package spaceclientgo
 
 import (
+	"aletheiaware.com/bcclientgo"
+	"aletheiaware.com/bcgo"
+	"aletheiaware.com/financego"
+	"aletheiaware.com/spacego"
 	"bytes"
 	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
-	"github.com/AletheiaWareLLC/bcclientgo"
-	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/financego"
-	"github.com/AletheiaWareLLC/spacego"
 	"github.com/golang/protobuf/proto"
 	"io"
 	"log"

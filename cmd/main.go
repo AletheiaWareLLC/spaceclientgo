@@ -17,14 +17,14 @@
 package main
 
 import (
+	"aletheiaware.com/bcclientgo"
+	"aletheiaware.com/bcgo"
+	"aletheiaware.com/financego"
+	"aletheiaware.com/spaceclientgo"
+	"aletheiaware.com/spacego"
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/AletheiaWareLLC/bcclientgo"
-	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/financego"
-	"github.com/AletheiaWareLLC/spaceclientgo"
-	"github.com/AletheiaWareLLC/spacego"
 	"io"
 	"log"
 	"os"

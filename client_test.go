@@ -17,14 +17,14 @@
 package spaceclientgo_test
 
 import (
+	"aletheiaware.com/bcgo"
+	"aletheiaware.com/spaceclientgo"
+	"aletheiaware.com/spacego"
+	"aletheiaware.com/testinggo"
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
-	"github.com/AletheiaWareLLC/bcgo"
-	"github.com/AletheiaWareLLC/spaceclientgo"
-	"github.com/AletheiaWareLLC/spacego"
-	"github.com/AletheiaWareLLC/testinggo"
 	"log"
 	"strings"
 	"testing"

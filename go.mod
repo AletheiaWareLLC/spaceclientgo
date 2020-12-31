@@ -1,12 +1,12 @@
-module github.com/AletheiaWareLLC/spaceclientgo
+module aletheiaware.com/spaceclientgo
 
 go 1.15
 
 require (
-	github.com/AletheiaWareLLC/bcclientgo v1.0.1
-	github.com/AletheiaWareLLC/bcgo v1.0.1
-	github.com/AletheiaWareLLC/financego v1.0.0
-	github.com/AletheiaWareLLC/spacego v1.0.1
-	github.com/AletheiaWareLLC/testinggo v1.0.0
+	aletheiaware.com/bcclientgo v1.1.0
+	aletheiaware.com/bcgo v1.1.1
+	aletheiaware.com/financego v1.1.0
+	aletheiaware.com/spacego v1.1.0
+	aletheiaware.com/testinggo v1.1.0
 	github.com/golang/protobuf v1.4.3
 )
