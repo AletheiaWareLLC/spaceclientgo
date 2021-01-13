@@ -21,25 +21,25 @@ import (
 	"aletheiaware.com/spaceclientgo"
 	"aletheiaware.com/spacego"
 	"aletheiaware.com/testinggo"
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
-	"log"
+	"io/ioutil"
 	"strings"
 	"testing"
 )
 
 func assertFile(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, metaId []byte, length int, content string) {
 	t.Helper()
-	var buf bytes.Buffer
-	count, err := c.ReadFile(n, metaId, &buf)
+	reader, err := c.ReadFile(n, metaId)
 	testinggo.AssertNoError(t, err)
-	log.Println("File", count, buf.String())
+	bytes, err := ioutil.ReadAll(reader)
+	testinggo.AssertNoError(t, err)
+	actual := string(bytes)
+	count := len(actual)
 	if count != length {
 		t.Fatalf("Incorrect length; expected '%d', got '%d'", length, count)
 	}
-	actual := buf.String()
 	if actual != content {
 		t.Fatalf("Incorrect content; expected '%s', got '%s", content, actual)
 	}

@@ -164,12 +164,16 @@ func main() {
 						return
 					}
 				}
-				count, err := client.ReadFile(node, recordHash, writer)
+				reader, err := client.ReadFile(node, recordHash)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-
+				count, err := io.Copy(writer, reader)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 				log.Println("Wrote", bcgo.BinarySizeToString(uint64(count)))
 			} else {
 				log.Println("get <hash> <file>")
@@ -199,7 +203,11 @@ func main() {
 						if err != nil {
 							return err
 						}
-						count, err := client.ReadFile(node, entry.RecordHash, writer)
+						reader, err := client.ReadFile(node, entry.RecordHash)
+						if err != nil {
+							return err
+						}
+						count, err := io.Copy(writer, reader)
 						if err != nil {
 							return err
 						}

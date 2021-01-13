@@ -206,7 +206,7 @@ func (c *SpaceClient) GetMeta(node *bcgo.Node, recordHash []byte, callback space
 }
 
 // ReadFile with the given hash
-func (c *SpaceClient) ReadFile(node *bcgo.Node, metaId []byte, writer io.Writer) (int, error) {
+func (c *SpaceClient) ReadFile(node *bcgo.Node, metaId []byte) (io.Reader, error) {
 	// TODO read from cache if file exists
 	deltas := spacego.OpenDeltaChannel(base64.RawURLEncoding.EncodeToString(metaId))
 	if err := deltas.Refresh(node.Cache, node.Network); err != nil {
@@ -217,9 +217,9 @@ func (c *SpaceClient) ReadFile(node *bcgo.Node, metaId []byte, writer io.Writer)
 		buffer = spacego.ApplyDelta(delta, buffer)
 		return nil
 	}); err != nil {
-		return 0, err
+		return nil, err
 	}
-	return writer.Write(buffer)
+	return bytes.NewReader(buffer), nil
 }
 
 // Search files owned by key
