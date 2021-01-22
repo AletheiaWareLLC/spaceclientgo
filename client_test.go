@@ -137,13 +137,13 @@ func TestClient_Append_and_ReadFile(t *testing.T) {
 
 	testinggo.AssertNoError(t, client.Append(node, nil, deltas, acl, &spacego.Delta{
 		Offset: 4,
-		Remove: 3,
-		Add:    []byte("foobar"),
+		Delete: 3,
+		Insert: []byte("foobar"),
 	}))
 	assertFile(t, client, node, ref.RecordHash, 10, "testfoobar")
 
 	testinggo.AssertNoError(t, client.Append(node, nil, deltas, acl, &spacego.Delta{
-		Remove: 7,
+		Delete: 7,
 	}))
 	assertFile(t, client, node, ref.RecordHash, 3, "bar")
 }
