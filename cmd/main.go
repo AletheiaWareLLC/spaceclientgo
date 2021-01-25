@@ -284,7 +284,7 @@ func main() {
 				merchant = args[1]
 			}
 			count := 0
-			if err := client.GetRegistration(merchant, func(r *financego.Registration) error {
+			if err := client.GetRegistration(merchant, func(e *bcgo.BlockEntry, r *financego.Registration) error {
 				log.Println(r)
 				count++
 				return nil
@@ -299,7 +299,7 @@ func main() {
 				merchant = args[1]
 			}
 			count := 0
-			if err := client.GetSubscription(merchant, func(s *financego.Subscription) error {
+			if err := client.GetSubscription(merchant, func(e *bcgo.BlockEntry, s *financego.Subscription) error {
 				log.Println(s)
 				count++
 				return nil
@@ -315,7 +315,7 @@ func main() {
 				return
 			}
 			count := 0
-			if err := client.GetRegistrarsForNode(node, func(a *spacego.Registrar, r *financego.Registration, s *financego.Subscription) error {
+			if err := spacego.GetAllRegistrarsForNode(node, func(a *spacego.Registrar, r *financego.Registration, s *financego.Subscription) error {
 				log.Println(a, r, s)
 				count++
 				return nil

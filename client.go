@@ -24,7 +24,6 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"encoding/base64"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"io"
 	"log"
@@ -307,7 +306,8 @@ func (c *SpaceClient) GetTag(node *bcgo.Node, metaId []byte, callback func(entry
 	})
 }
 
-func (c *SpaceClient) GetRegistration(merchant string, callback func(*financego.Registration) error) error {
+// GetRegistration triggers the given callback for the most recent registration with the given merchant.
+func (c *SpaceClient) GetRegistration(merchant string, callback financego.RegistrationCallback) error {
 	node, err := c.GetNode()
 	if err != nil {
 		return err
@@ -319,7 +319,8 @@ func (c *SpaceClient) GetRegistration(merchant string, callback func(*financego.
 	return financego.GetRegistrationAsync(registrations, node.Cache, node.Network, merchant, nil, node.Alias, node.Key, callback)
 }
 
-func (c *SpaceClient) GetSubscription(merchant string, callback func(*financego.Subscription) error) error {
+// GetSubscription triggers the given callback for the most recent subscription with the given merchant.
+func (c *SpaceClient) GetSubscription(merchant string, callback financego.SubscriptionCallback) error {
 	node, err := c.GetNode()
 	if err != nil {
 		return err
@@ -329,85 +330,4 @@ func (c *SpaceClient) GetSubscription(merchant string, callback func(*financego.
 		log.Println(err)
 	}
 	return financego.GetSubscriptionAsync(subscriptions, node.Cache, node.Network, merchant, nil, node.Alias, node.Key, "", "", callback)
-}
-
-// GetRegistrarsForNode triggers the given callback for each registrar with which the given node is registered, and optionally subscribed
-func (c *SpaceClient) GetRegistrarsForNode(node *bcgo.Node, callback func(*spacego.Registrar, *financego.Registration, *financego.Subscription) error) error {
-	registrars := node.GetOrOpenChannel(spacego.SPACE_REGISTRAR, func() *bcgo.Channel {
-		return spacego.OpenRegistrarChannel()
-	})
-	registrations := node.GetOrOpenChannel(spacego.SPACE_REGISTRATION, func() *bcgo.Channel {
-		return spacego.OpenRegistrationChannel()
-	})
-	subscriptions := node.GetOrOpenChannel(spacego.SPACE_SUBSCRIPTION, func() *bcgo.Channel {
-		return spacego.OpenSubscriptionChannel()
-	})
-	if err := registrars.Refresh(node.Cache, node.Network); err != nil {
-		log.Println(err)
-	}
-	if err := registrations.Refresh(node.Cache, node.Network); err != nil {
-		log.Println(err)
-	}
-	if err := subscriptions.Refresh(node.Cache, node.Network); err != nil {
-		log.Println(err)
-	}
-
-	// Get registrars
-	as := make(map[string]*spacego.Registrar)
-	if err := bcgo.Read(registrars.Name, registrars.Head, nil, node.Cache, node.Network, "", nil, nil, func(entry *bcgo.BlockEntry, key, data []byte) error {
-		// Unmarshal as Registrar
-		r := &spacego.Registrar{}
-		err := proto.Unmarshal(data, r)
-		if err != nil {
-			return err
-		}
-		as[r.Merchant.Alias] = r
-		return nil
-	}); err != nil {
-		return fmt.Errorf("Error reading Registrars: %v", err)
-	}
-
-	// Get registrations
-	rs := make(map[string]*financego.Registration)
-	if err := bcgo.Read(registrations.Name, registrations.Head, nil, node.Cache, node.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key, data []byte) error {
-		// Unmarshal as Registration
-		r := &financego.Registration{}
-		err := proto.Unmarshal(data, r)
-		if err != nil {
-			return err
-		}
-		if _, ok := as[r.MerchantAlias]; ok && node.Alias == r.CustomerAlias {
-			rs[r.MerchantAlias] = r
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("Error reading Registrations: %v", err)
-	}
-
-	// Get subscriptions
-	ss := make(map[string]*financego.Subscription)
-	if err := bcgo.Read(subscriptions.Name, subscriptions.Head, nil, node.Cache, node.Network, node.Alias, node.Key, nil, func(entry *bcgo.BlockEntry, key, data []byte) error {
-		// Unmarshal as Subscription
-		s := &financego.Subscription{}
-		err := proto.Unmarshal(data, s)
-		if err != nil {
-			return err
-		}
-		if _, ok := as[s.MerchantAlias]; ok && node.Alias == s.CustomerAlias {
-			ss[s.MerchantAlias] = s
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("Error reading Subscriptions: %v", err)
-	}
-	for merchant, registrar := range as {
-		registration, ok := rs[merchant]
-		if !ok {
-			continue
-		}
-		if err := callback(registrar, registration, ss[merchant]); err != nil {
-			return err
-		}
-	}
-	return nil
 }

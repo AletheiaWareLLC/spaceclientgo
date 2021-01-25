@@ -240,7 +240,3 @@ func TestClientGetRegistration(t *testing.T) {
 func TestClientGetSubscription(t *testing.T) {
 	// TODO
 }
-
-func TestClientGetRegistrarsForNode(t *testing.T) {
-	// TODO
-}
