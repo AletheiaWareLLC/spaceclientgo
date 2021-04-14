@@ -131,18 +131,14 @@ func TestClient_Append_and_ReadFile(t *testing.T) {
 	deltas := spacego.OpenDeltaChannel(metaId)
 	testinggo.AssertNoError(t, deltas.LoadCachedHead(node.Cache))
 
-	acl := map[string]*rsa.PublicKey{
-		alias: &key.PublicKey,
-	}
-
-	testinggo.AssertNoError(t, client.Append(node, nil, deltas, acl, &spacego.Delta{
+	testinggo.AssertNoError(t, client.Append(node, nil, deltas, &spacego.Delta{
 		Offset: 4,
 		Delete: 3,
 		Insert: []byte("foobar"),
 	}))
 	assertFile(t, client, node, ref.RecordHash, 10, "testfoobar")
 
-	testinggo.AssertNoError(t, client.Append(node, nil, deltas, acl, &spacego.Delta{
+	testinggo.AssertNoError(t, client.Append(node, nil, deltas, &spacego.Delta{
 		Delete: 7,
 	}))
 	assertFile(t, client, node, ref.RecordHash, 3, "bar")

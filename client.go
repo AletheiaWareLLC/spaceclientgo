@@ -156,18 +156,25 @@ func (c *SpaceClient) Add(node *bcgo.Node, listener bcgo.MiningListener, name, m
 }
 
 // Append adds the given delta to the file
-func (c *SpaceClient) Append(node *bcgo.Node, listener bcgo.MiningListener, deltas *bcgo.Channel, acl map[string]*rsa.PublicKey, delta *spacego.Delta) error {
+func (c *SpaceClient) Append(node *bcgo.Node, listener bcgo.MiningListener, deltas *bcgo.Channel, delta *spacego.Delta) error {
 	data, err := proto.Marshal(delta)
 	if err != nil {
 		return err
 	}
+
+	acl := map[string]*rsa.PublicKey{
+		node.Alias: &node.Key.PublicKey,
+	}
+
 	_, record, err := bcgo.CreateRecord(bcgo.Timestamp(), node.Alias, node.Key, acl, nil, data)
 	if err != nil {
 		return err
 	}
+
 	if _, err := bcgo.WriteRecord(deltas.Name, node.Cache, record); err != nil {
 		return err
 	}
+
 	// Mine file channel
 	if _, _, err := node.Mine(deltas, spacego.THRESHOLD_CUSTOMER, listener); err != nil {
 		return err
