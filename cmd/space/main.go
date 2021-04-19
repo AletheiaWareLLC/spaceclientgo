@@ -60,7 +60,7 @@ func main() {
 			}
 		case "add":
 			if len(args) > 2 {
-				node, err := client.GetNode()
+				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
@@ -110,21 +110,21 @@ func main() {
 				return PrintMeta(os.Stdout, entry, meta)
 			}
 
-			node, err := client.GetNode()
+			node, err := client.Node()
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
 			log.Println("Files:")
-			if err := client.List(node, callback); err != nil {
+			if err := client.AllMetas(node, callback); err != nil {
 				log.Println(err)
 				return
 			}
 			log.Println(count, "files")
 		case "show":
 			if len(args) > 1 {
-				node, err := client.GetNode()
+				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
@@ -134,7 +134,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				if err := client.GetMeta(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if err := client.MetaForHash(node, recordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					return PrintMeta(os.Stdout, entry, meta)
 				}); err != nil {
 					log.Println(err)
@@ -145,7 +145,7 @@ func main() {
 			}
 		case "get":
 			if len(args) > 1 {
-				node, err := client.GetNode()
+				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
@@ -181,12 +181,12 @@ func main() {
 			}
 		case "get-all":
 			if len(args) > 1 {
-				node, err := client.GetNode()
+				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				if err := client.List(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+				if err := client.AllMetas(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 					hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
 					dir := filepath.Join(args[1], hash)
 					if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -226,7 +226,7 @@ func main() {
 			if len(args) > 1 {
 				ts := args[1:]
 				log.Println("Searching Files for", ts)
-				node, err := client.GetNode()
+				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
@@ -246,7 +246,7 @@ func main() {
 			}
 		case "tag":
 			if len(args) > 1 {
-				node, err := client.GetNode()
+				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
@@ -267,8 +267,9 @@ func main() {
 
 					log.Println("Tagged", args[1], references)
 				} else {
-					if err := client.GetTag(node, recordHash, func(entry *bcgo.BlockEntry, tag *spacego.Tag) {
+					if err := client.AllTagsForHash(node, recordHash, func(entry *bcgo.BlockEntry, tag *spacego.Tag) error {
 						log.Println(tag.Value)
+						return nil
 					}); err != nil {
 						log.Println(err)
 						return
@@ -284,7 +285,7 @@ func main() {
 				merchant = args[1]
 			}
 			count := 0
-			if err := client.GetRegistration(merchant, func(e *bcgo.BlockEntry, r *financego.Registration) error {
+			if err := client.Registration(merchant, func(e *bcgo.BlockEntry, r *financego.Registration) error {
 				log.Println(r)
 				count++
 				return nil
@@ -299,7 +300,7 @@ func main() {
 				merchant = args[1]
 			}
 			count := 0
-			if err := client.GetSubscription(merchant, func(e *bcgo.BlockEntry, s *financego.Subscription) error {
+			if err := client.Subscription(merchant, func(e *bcgo.BlockEntry, s *financego.Subscription) error {
 				log.Println(s)
 				count++
 				return nil
@@ -309,13 +310,13 @@ func main() {
 			}
 			log.Println(count, "results")
 		case "registrars":
-			node, err := client.GetNode()
+			node, err := client.Node()
 			if err != nil {
 				log.Println(err)
 				return
 			}
 			count := 0
-			if err := spacego.GetAllRegistrarsForNode(node, func(a *spacego.Registrar, r *financego.Registration, s *financego.Subscription) error {
+			if err := spacego.AllRegistrarsForNode(node, func(a *spacego.Registrar, r *financego.Registration, s *financego.Subscription) error {
 				log.Println(a, r, s)
 				count++
 				return nil

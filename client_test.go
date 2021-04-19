@@ -18,18 +18,19 @@ package spaceclientgo_test
 
 import (
 	"aletheiaware.com/bcgo"
+	"aletheiaware.com/bcgo/account"
+	"aletheiaware.com/bcgo/cache"
+	"aletheiaware.com/bcgo/node"
 	"aletheiaware.com/spaceclientgo"
 	"aletheiaware.com/spacego"
 	"aletheiaware.com/testinggo"
-	"crypto/rand"
-	"crypto/rsa"
 	"encoding/base64"
 	"io/ioutil"
 	"strings"
 	"testing"
 )
 
-func assertFile(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, metaId []byte, length int, content string) {
+func assertFile(t *testing.T, c spaceclientgo.SpaceClient, n bcgo.Node, metaId []byte, length int, content string) {
 	t.Helper()
 	reader, err := c.ReadFile(n, metaId)
 	testinggo.AssertNoError(t, err)
@@ -45,10 +46,10 @@ func assertFile(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, metaId
 	}
 }
 
-func assertMeta(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, name, mime string) {
+func assertMeta(t *testing.T, c spaceclientgo.SpaceClient, n bcgo.Node, name, mime string) {
 	t.Helper()
 	var metas []*spacego.Meta
-	testinggo.AssertNoError(t, c.List(n, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+	testinggo.AssertNoError(t, c.AllMetas(n, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 		metas = append(metas, meta)
 		return nil
 	}))
@@ -64,23 +65,19 @@ func assertMeta(t *testing.T, c *spaceclientgo.SpaceClient, n *bcgo.Node, name, 
 	}
 }
 
-func makeNode(t *testing.T, a string, key *rsa.PrivateKey, cache bcgo.Cache, network bcgo.Network) *bcgo.Node {
+func makeNode(t *testing.T, alias string, cache bcgo.Cache, network bcgo.Network) bcgo.Node {
 	t.Helper()
-	return &bcgo.Node{
-		Alias:    a,
-		Key:      key,
-		Cache:    cache,
-		Network:  network,
-		Channels: make(map[string]*bcgo.Channel),
-	}
+	a, err := account.GenerateRSA(alias)
+	testinggo.AssertNoError(t, err)
+	return node.New(a, cache, network)
 }
 
 func TestClientInit(t *testing.T) {
 	// TODO set ROOT_DIRECTORY, ALIAS env
 	/*
 		t.Run("Success", func(t *testing.T) {
-		   root := testinggo.MakeEnvTempDir(t, "ROOT_DIRECTORY", "root")
-		   defer testinggo.UnmakeEnvTempDir(t, "ROOT_DIRECTORY", root)
+		   root := testinggo.SetEnvTempDir(t, "ROOT_DIRECTORY", "root")
+		   defer testinggo.UnsetEnvTempDir(t, "ROOT_DIRECTORY", root)
 		   client := &main.Client{
 		       Root: root,
 		   }
@@ -94,13 +91,9 @@ func TestClientInit(t *testing.T) {
 
 func TestClient_Add_and_ReadFile(t *testing.T) {
 	alias := "Tester"
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		t.Error("Could not generate key:", err)
-	}
-	cache := bcgo.NewMemoryCache(10)
-	node := makeNode(t, alias, key, cache, nil)
-	client := &spaceclientgo.SpaceClient{}
+	cache := cache.NewMemory(10)
+	node := makeNode(t, alias, cache, nil)
+	client := spaceclientgo.NewSpaceClient()
 	name := "test"
 	mime := "text/plain"
 	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing"))
@@ -112,13 +105,9 @@ func TestClient_Add_and_ReadFile(t *testing.T) {
 
 func TestClient_Append_and_ReadFile(t *testing.T) {
 	alias := "Tester"
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		t.Error("Could not generate key:", err)
-	}
-	cache := bcgo.NewMemoryCache(10)
-	node := makeNode(t, alias, key, cache, nil)
-	client := &spaceclientgo.SpaceClient{}
+	cache := cache.NewMemory(10)
+	node := makeNode(t, alias, cache, nil)
+	client := spaceclientgo.NewSpaceClient()
 	name := "test"
 	mime := "text/plain"
 	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing"))
@@ -129,7 +118,7 @@ func TestClient_Append_and_ReadFile(t *testing.T) {
 
 	metaId := base64.RawURLEncoding.EncodeToString(ref.RecordHash)
 	deltas := spacego.OpenDeltaChannel(metaId)
-	testinggo.AssertNoError(t, deltas.LoadCachedHead(node.Cache))
+	testinggo.AssertNoError(t, deltas.Load(node.Cache(), nil))
 
 	testinggo.AssertNoError(t, client.Append(node, nil, deltas, &spacego.Delta{
 		Offset: 4,
@@ -144,15 +133,11 @@ func TestClient_Append_and_ReadFile(t *testing.T) {
 	assertFile(t, client, node, ref.RecordHash, 3, "bar")
 }
 
-func TestClientList(t *testing.T) {
+func TestClientAllMetas(t *testing.T) {
 	alias := "Tester"
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		t.Error("Could not generate key:", err)
-	}
-	cache := bcgo.NewMemoryCache(10)
-	node := makeNode(t, alias, key, cache, nil)
-	client := &spaceclientgo.SpaceClient{}
+	cache := cache.NewMemory(10)
+	node := makeNode(t, alias, cache, nil)
+	client := spaceclientgo.NewSpaceClient()
 	name0 := "test0"
 	mime0 := "text/plain"
 	ref0, err := client.Add(node, nil, name0, mime0, strings.NewReader("testing0"))
@@ -164,7 +149,7 @@ func TestClientList(t *testing.T) {
 	testinggo.AssertNoError(t, err)
 
 	results := make(map[string]*spacego.Meta)
-	testinggo.AssertNoError(t, client.List(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+	testinggo.AssertNoError(t, client.AllMetas(node, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 		results[base64.RawURLEncoding.EncodeToString(entry.RecordHash)] = meta
 		return nil
 	}))
@@ -187,21 +172,17 @@ func TestClientList(t *testing.T) {
 	}
 }
 
-func TestClientGetMeta(t *testing.T) {
+func TestClientMetaForHash(t *testing.T) {
 	alias := "Tester"
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		t.Error("Could not generate key:", err)
-	}
-	cache := bcgo.NewMemoryCache(10)
-	node := makeNode(t, alias, key, cache, nil)
-	client := &spaceclientgo.SpaceClient{}
+	cache := cache.NewMemory(10)
+	node := makeNode(t, alias, cache, nil)
+	client := spaceclientgo.NewSpaceClient()
 	name := "test"
 	mime := "text/plain"
 	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing"))
 	testinggo.AssertNoError(t, err)
 	var metas []*spacego.Meta
-	testinggo.AssertNoError(t, client.GetMeta(node, ref.RecordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+	testinggo.AssertNoError(t, client.MetaForHash(node, ref.RecordHash, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
 		metas = append(metas, meta)
 		return nil
 	}))
@@ -225,14 +206,14 @@ func TestClientAddTag(t *testing.T) {
 	// TODO
 }
 
-func TestClientGetTag(t *testing.T) {
+func TestClientAllTagsForHash(t *testing.T) {
 	// TODO
 }
 
-func TestClientGetRegistration(t *testing.T) {
+func TestClientRegistration(t *testing.T) {
 	// TODO
 }
 
-func TestClientGetSubscription(t *testing.T) {
+func TestClientSubscription(t *testing.T) {
 	// TODO
 }
