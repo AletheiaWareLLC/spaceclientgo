@@ -17,6 +17,7 @@
 package main
 
 import (
+	"aletheiaware.com/aliasgo"
 	"aletheiaware.com/bcclientgo"
 	"aletheiaware.com/bcgo"
 	"aletheiaware.com/financego"
@@ -29,6 +30,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 )
 
 var peer = flag.String("peer", "", "Space peer")
@@ -48,13 +51,38 @@ func main() {
 		switch args[0] {
 		case "init":
 			PrintLegalese(os.Stdout)
-			node, err := client.Init(&bcgo.PrintingMiningListener{Output: os.Stdout})
+			root, err := client.Root()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			// Add Space hosts to peers
+			for _, host := range spacego.SpaceHosts() {
+				if err := bcgo.AddPeer(root, host); err != nil {
+					log.Println(err)
+					return
+				}
+			}
+			// Add BC host to peers
+			if err := bcgo.AddPeer(root, bcgo.BCHost()); err != nil {
+				log.Println(err)
+				return
+			}
+			node, err := client.Node()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if err := aliasgo.Register(node, &bcgo.PrintingMiningListener{Output: os.Stdout}); err != nil {
+				log.Println(err)
+				return
+			}
 			if err != nil {
 				log.Println(err)
 				return
 			}
 			log.Println("Initialized")
-			if err := bcclientgo.PrintNode(os.Stdout, node); err != nil {
+			if err := bcclientgo.PrintIdentity(os.Stdout, node.Account()); err != nil {
 				log.Println(err)
 				return
 			}
@@ -222,27 +250,83 @@ func main() {
 				log.Println("get-all <directory>")
 			}
 		case "search":
-			// search metas by tag
+			// search files by name, type, and/or tag
 			if len(args) > 1 {
-				ts := args[1:]
-				log.Println("Searching Files for", ts)
+				var names, types, tags []string
+				for _, a := range args[1:] {
+					switch {
+					case strings.HasPrefix(a, "tag:"):
+						tags = append(tags, strings.TrimPrefix(a, "tag:"))
+					case strings.HasPrefix(a, "type:"):
+						types = append(types, strings.TrimPrefix(a, "type:"))
+					case strings.HasPrefix(a, "name:"):
+						fallthrough
+					default:
+						names = append(names, strings.TrimPrefix(a, "name:"))
+					}
+				}
 				node, err := client.Node()
 				if err != nil {
 					log.Println(err)
 					return
 				}
 				log.Println("Files:")
-				count := 0
-				if client.Search(node, ts, func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
-					count += 1
-					return PrintMeta(os.Stdout, entry, meta)
-				}); err != nil {
-					log.Println(err)
-					return
+				var hashes []string
+				counts := make(map[string]int)
+				entries := make(map[string]*bcgo.BlockEntry)
+				metas := make(map[string]*spacego.Meta)
+				callback := func(entry *bcgo.BlockEntry, meta *spacego.Meta) error {
+					hash := base64.RawURLEncoding.EncodeToString(entry.RecordHash)
+					c, ok := counts[hash]
+					if ok {
+						c = c + 1
+					} else {
+						c = 1
+						hashes = append(hashes, hash)
+						entries[hash] = entry
+						metas[hash] = meta
+					}
+					counts[hash] = c
+					return nil
 				}
-				log.Println(count, "files")
+				// Search by name
+				if len(names) > 0 {
+					if client.SearchMeta(node, spacego.NewNameFilter(names...), callback); err != nil {
+						log.Println(err)
+						return
+					}
+				}
+				// Search by type
+				if len(types) > 0 {
+					if client.SearchMeta(node, spacego.NewTypeFilter(types...), callback); err != nil {
+						log.Println(err)
+						return
+					}
+				}
+				// Search by tag
+				if len(tags) > 0 {
+					if client.SearchTag(node, spacego.NewTagFilter(tags...), callback); err != nil {
+						log.Println(err)
+						return
+					}
+				}
+				// Sort by timestamp
+				sort.Slice(hashes, func(i, j int) bool {
+					return entries[hashes[i]].Record.Timestamp < entries[hashes[j]].Record.Timestamp
+				})
+				// Sort by count
+				sort.Slice(hashes, func(i, j int) bool {
+					return counts[hashes[i]] < counts[hashes[j]]
+				})
+				for _, h := range hashes {
+					PrintMeta(os.Stdout, entries[h], metas[h])
+				}
+				log.Println(len(hashes), "files")
 			} else {
-				log.Println("search <tag>... (search files by tags)")
+				log.Println("search <name> (search files by name)")
+				log.Println("search name:<name> (search files by name)")
+				log.Println("search type:<type> (search files by type)")
+				log.Println("search tag:<tag> (search files by tag)")
 			}
 		case "tag":
 			if len(args) > 1 {
@@ -351,7 +435,10 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace get-all [directory] - write all files to given directory")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace tag [hash] [tag...] - tags file with given hash with given tags")
-	fmt.Fprintln(output, "\tspace search [tag...] - search files for given tags")
+	fmt.Fprintln(output)
+	fmt.Fprintln(output, "\tspace search name:[name] - search files for given name")
+	fmt.Fprintln(output, "\tspace search type:[type] - search files for given type")
+	fmt.Fprintln(output, "\tspace search tag:[tag] - search files for given tag")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace registration [merchant] - display registration information between this alias and the given merchant")
 	fmt.Fprintln(output, "\tspace subscription [merchant] - display subscription information between this alias and the given merchant")

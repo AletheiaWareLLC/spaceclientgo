@@ -40,24 +40,22 @@ type MockSpaceClient struct {
 	MockDeltas                      bcgo.Channel
 	MockDelta                       *spacego.Delta
 	MockHash                        []byte
+	MockMetaFilter                  spacego.MetaFilter
 	MockMetaCallback                spacego.MetaCallback
 	MockMetaCallbackResults         []*MockMetaCallbackResult
-	MockTags, MockTerms             []string
+	MockTagFilter                   spacego.TagFilter
+	MockTags                        []string
 	MockMerchant                    string
 	MockRegistrationCallback        financego.RegistrationCallback
 	MockRegistrationCallbackResults []*MockRegistrationCallbackResult
 	MockSubscriptionCallback        financego.SubscriptionCallback
 	MockSubscriptionCallbackResults []*MockSubscriptionCallbackResult
 
-	MockAddError, MockAppendError                      error
-	MockMetaError, MockAllMetasError, MockReadError    error
-	MockAddTagError, MockAllTagsError, MockSearchError error
-	MockRegistrationError, MockSubscriptionError       error
-}
-
-func (c *MockSpaceClient) Init(listener bcgo.MiningListener) (bcgo.Node, error) {
-	c.MockListener = listener
-	return c.MockNode, c.MockInitError
+	MockAddError, MockAppendError                   error
+	MockMetaError, MockAllMetasError, MockReadError error
+	MockAddTagError, MockAllTagsError               error
+	MockSearchMetaError, MockSearchTagError         error
+	MockRegistrationError, MockSubscriptionError    error
 }
 
 func (c *MockSpaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
@@ -116,14 +114,24 @@ func (c *MockSpaceClient) AllTagsForHash(node bcgo.Node, hash []byte, callback s
 	return c.MockAllTagsError
 }
 
-func (c *MockSpaceClient) Search(node bcgo.Node, terms []string, callback spacego.MetaCallback) error {
+func (c *MockSpaceClient) SearchMeta(node bcgo.Node, filter spacego.MetaFilter, callback spacego.MetaCallback) error {
 	c.MockNode = node
-	c.MockTerms = terms
+	c.MockMetaFilter = filter
 	c.MockMetaCallback = callback
 	for _, r := range c.MockMetaCallbackResults {
 		callback(r.Entry, r.Meta)
 	}
-	return c.MockSearchError
+	return c.MockSearchMetaError
+}
+
+func (c *MockSpaceClient) SearchTag(node bcgo.Node, filter spacego.TagFilter, callback spacego.MetaCallback) error {
+	c.MockNode = node
+	c.MockTagFilter = filter
+	c.MockMetaCallback = callback
+	for _, r := range c.MockMetaCallbackResults {
+		callback(r.Entry, r.Meta)
+	}
+	return c.MockSearchTagError
 }
 
 func (c *MockSpaceClient) Registration(merchant string, callback financego.RegistrationCallback) error {
