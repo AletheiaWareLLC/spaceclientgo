@@ -249,6 +249,46 @@ func main() {
 			} else {
 				log.Println("get-all <directory>")
 			}
+		case "set":
+			if len(args) > 1 {
+				node, err := client.Node()
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				recordHash, err := base64.RawURLEncoding.DecodeString(args[1])
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				reader := os.Stdin
+				if len(args) > 2 {
+					log.Println("Reading from " + args[2])
+					reader, err = os.Open(args[2])
+					if err != nil {
+						log.Println(err)
+						return
+					}
+				}
+				writer, err := client.WriteFile(node, &bcgo.PrintingMiningListener{Output: os.Stdout}, recordHash)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				count, err := io.Copy(writer, reader)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if err := writer.Close(); err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Wrote", bcgo.BinarySizeToString(uint64(count)))
+			} else {
+				log.Println("set <hash> <file>")
+				log.Println("set <hash> (read from stdin)")
+			}
 		case "search":
 			// search files by name, type, and/or tag
 			if len(args) > 1 {
@@ -433,6 +473,9 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tspace get [hash] - write file with given hash to stdout")
 	fmt.Fprintln(output, "\tspace get [hash] [file] - write file with given hash to file")
 	fmt.Fprintln(output, "\tspace get-all [directory] - write all files to given directory")
+	fmt.Fprintln(output)
+	fmt.Fprintln(output, "\tspace set [hash] - write stdin to file with given hash")
+	fmt.Fprintln(output, "\tspace set [hash] [file] - write file to file with given hash")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tspace tag [hash] [tag...] - tags file with given hash with given tags")
 	fmt.Fprintln(output)
