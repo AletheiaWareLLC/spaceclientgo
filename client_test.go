@@ -25,6 +25,7 @@ import (
 	"aletheiaware.com/spacego"
 	"aletheiaware.com/testinggo"
 	"encoding/base64"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -131,6 +132,29 @@ func TestClient_Append_and_ReadFile(t *testing.T) {
 		Delete: 7,
 	}))
 	assertFile(t, client, node, ref.RecordHash, 3, "bar")
+}
+
+func TestClient_Write_and_ReadFile(t *testing.T) {
+	alias := "Tester"
+	cache := cache.NewMemory(10)
+	node := makeNode(t, alias, cache, nil)
+	client := spaceclientgo.NewSpaceClient()
+	name := "test"
+	mime := "text/plain"
+	ref, err := client.Add(node, nil, name, mime, strings.NewReader("testing=true"))
+	testinggo.AssertNoError(t, err)
+
+	assertMeta(t, client, node, name, mime)
+	assertFile(t, client, node, ref.RecordHash, 12, "testing=true")
+
+	w, err := client.WriteFile(node, nil, ref.RecordHash)
+	testinggo.AssertNoError(t, err)
+	n, err := w.Write([]byte("tasting=true\ntesting=false"))
+	testinggo.AssertNoError(t, err)
+	assert.Equal(t, 26, n)
+
+	testinggo.AssertNoError(t, w.Close())
+	assertFile(t, client, node, ref.RecordHash, 26, "tasting=true\ntesting=false")
 }
 
 func TestClientAllMetas(t *testing.T) {

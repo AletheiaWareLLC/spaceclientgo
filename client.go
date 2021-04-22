@@ -37,6 +37,7 @@ type SpaceClient interface {
 	MetaForHash(bcgo.Node, []byte, spacego.MetaCallback) error
 	AllMetas(bcgo.Node, spacego.MetaCallback) error
 	ReadFile(bcgo.Node, []byte) (io.Reader, error)
+	WriteFile(bcgo.Node, bcgo.MiningListener, []byte) (io.WriteCloser, error)
 
 	/*
 		AddPreview(bcgo.Node, bcgo.MiningListener, []byte, []string) ([]*bcgo.Reference, error)
@@ -231,6 +232,26 @@ func (c *spaceClient) ReadFile(node bcgo.Node, metaId []byte) (io.Reader, error)
 		return nil, err
 	}
 	return bytes.NewReader(buffer), nil
+}
+
+// WriteFile with the given hash
+func (c *spaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, metaId []byte) (io.WriteCloser, error) {
+	// Read current file into a old buffer
+	deltas := spacego.OpenDeltaChannel(base64.RawURLEncoding.EncodeToString(metaId))
+	if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
+		log.Println(err)
+	}
+	old := []byte{}
+	if err := spacego.IterateDeltas(node, deltas, func(entry *bcgo.BlockEntry, delta *spacego.Delta) error {
+		old = spacego.ApplyDelta(delta, old)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	var new bytes.Buffer
+	return spacego.NewCloser(&new, func() error {
+		return c.Append(node, listener, deltas, spacego.Difference(old, new.Bytes())...)
+	}), nil
 }
 
 // SearchMeta searches files by metadata
