@@ -37,12 +37,13 @@ type MockSpaceClient struct {
 	MockName, MockMime              string
 	MockReference                   *bcgo.Reference
 	MockReferences                  []*bcgo.Reference
-	MockDeltas                      bcgo.Channel
-	MockDelta                       *spacego.Delta
+	MockDeltaChannel                bcgo.Channel
+	MockDeltas                      []*spacego.Delta
 	MockHash                        []byte
 	MockMetaFilter                  spacego.MetaFilter
 	MockMetaCallback                spacego.MetaCallback
 	MockMetaCallbackResults         []*MockMetaCallbackResult
+	MockWriteCloser                 io.WriteCloser
 	MockTagFilter                   spacego.TagFilter
 	MockTags                        []string
 	MockMerchant                    string
@@ -51,11 +52,12 @@ type MockSpaceClient struct {
 	MockSubscriptionCallback        financego.SubscriptionCallback
 	MockSubscriptionCallbackResults []*MockSubscriptionCallbackResult
 
-	MockAddError, MockAppendError                   error
-	MockMetaError, MockAllMetasError, MockReadError error
-	MockAddTagError, MockAllTagsError               error
-	MockSearchMetaError, MockSearchTagError         error
-	MockRegistrationError, MockSubscriptionError    error
+	MockAddError, MockAppendError                error
+	MockMetaError, MockAllMetasError             error
+	MockReadError, MockWriteError                error
+	MockAddTagError, MockAllTagsError            error
+	MockSearchMetaError, MockSearchTagError      error
+	MockRegistrationError, MockSubscriptionError error
 }
 
 func (c *MockSpaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
@@ -67,11 +69,11 @@ func (c *MockSpaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name
 	return c.MockReference, c.MockAddError
 }
 
-func (c *MockSpaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, deltas bcgo.Channel, delta *spacego.Delta) error {
+func (c *MockSpaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, channel bcgo.Channel, deltas ...*spacego.Delta) error {
 	c.MockNode = node
 	c.MockListener = listener
+	c.MockDeltaChannel = channel
 	c.MockDeltas = deltas
-	c.MockDelta = delta
 	return c.MockAppendError
 }
 
@@ -98,6 +100,13 @@ func (c *MockSpaceClient) ReadFile(node bcgo.Node, hash []byte) (io.Reader, erro
 	c.MockNode = node
 	c.MockHash = hash
 	return c.MockReader, c.MockReadError
+}
+
+func (c *MockSpaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, hash []byte) (io.WriteCloser, error) {
+	c.MockNode = node
+	c.MockListener = listener
+	c.MockHash = hash
+	return c.MockWriteCloser, c.MockWriteError
 }
 
 func (c *MockSpaceClient) AddTag(node bcgo.Node, listener bcgo.MiningListener, hash []byte, tags []string) ([]*bcgo.Reference, error) {
