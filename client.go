@@ -22,11 +22,13 @@ import (
 	"aletheiaware.com/financego"
 	"aletheiaware.com/spacego"
 	"bytes"
+	"context"
 	"encoding/base64"
 	"github.com/golang/protobuf/proto"
 	"io"
 	"log"
 	"reflect"
+	"time"
 )
 
 type SpaceClient interface {
@@ -38,6 +40,7 @@ type SpaceClient interface {
 	AllMetas(bcgo.Node, spacego.MetaCallback) error
 	ReadFile(bcgo.Node, []byte) (io.Reader, error)
 	WriteFile(bcgo.Node, bcgo.MiningListener, []byte) (io.WriteCloser, error)
+	WatchFile(context.Context, bcgo.Node, []byte, func()) error
 
 	/*
 		AddPreview(bcgo.Node, bcgo.MiningListener, []byte, []string) ([]*bcgo.Reference, error)
@@ -252,6 +255,46 @@ func (c *spaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, me
 	return spacego.NewCloser(&new, func() error {
 		return c.Append(node, listener, deltas, spacego.Difference(old, new.Bytes())...)
 	}), nil
+}
+
+// WatchFile triggers the given callback whenever the file with given hash updates.
+func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, hash []byte, callback func()) error {
+	initial := time.Second
+	limit := time.Hour
+	duration := initial
+	ticker := time.NewTicker(duration)
+	deltas := spacego.OpenDeltaChannel(base64.RawURLEncoding.EncodeToString(hash)) // TODO open channel from node
+	deltas.AddTrigger(callback)
+	// TODO replace polling with mechanism to register with provider to listen for remote updates
+	go func() {
+		defer ticker.Stop()
+		for {
+			log.Println("Duration:", duration)
+			select {
+			case t:=<-ticker.C:
+				log.Println("Tick:", t)
+				head := deltas.Head()
+				if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
+					log.Println(err)
+				}
+				if bytes.Equal(head, deltas.Head()) {
+					// No change, exponential backoff
+					duration *= 2
+					if duration > limit {
+						duration = limit
+					}
+				} else {
+					// Change, reset duration
+					duration = initial
+				}
+				ticker.Stop()
+				ticker = time.NewTicker(duration)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return nil
 }
 
 // SearchMeta searches files by metadata

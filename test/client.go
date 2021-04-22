@@ -21,6 +21,7 @@ import (
 	"aletheiaware.com/bcgo"
 	"aletheiaware.com/financego"
 	"aletheiaware.com/spacego"
+	"context"
 	"io"
 	"testing"
 )
@@ -34,6 +35,7 @@ func NewMockSpaceClient(t *testing.T) *MockSpaceClient {
 
 type MockSpaceClient struct {
 	test.MockBCClient
+	MockContext                     context.Context
 	MockName, MockMime              string
 	MockReference                   *bcgo.Reference
 	MockReferences                  []*bcgo.Reference
@@ -52,12 +54,12 @@ type MockSpaceClient struct {
 	MockSubscriptionCallback        financego.SubscriptionCallback
 	MockSubscriptionCallbackResults []*MockSubscriptionCallbackResult
 
-	MockAddError, MockAppendError                error
-	MockMetaError, MockAllMetasError             error
-	MockReadError, MockWriteError                error
-	MockAddTagError, MockAllTagsError            error
-	MockSearchMetaError, MockSearchTagError      error
-	MockRegistrationError, MockSubscriptionError error
+	MockAddError, MockAppendError                 error
+	MockMetaError, MockAllMetasError              error
+	MockReadError, MockWriteError, MockWatchError error
+	MockAddTagError, MockAllTagsError             error
+	MockSearchMetaError, MockSearchTagError       error
+	MockRegistrationError, MockSubscriptionError  error
 }
 
 func (c *MockSpaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
@@ -107,6 +109,13 @@ func (c *MockSpaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener
 	c.MockListener = listener
 	c.MockHash = hash
 	return c.MockWriteCloser, c.MockWriteError
+}
+
+func (c *MockSpaceClient) WatchFile(ctx context.Context, node bcgo.Node, hash []byte, callback func()) error {
+	c.MockContext = ctx
+	c.MockNode = node
+	c.MockHash = hash
+	return c.MockWatchError
 }
 
 func (c *MockSpaceClient) AddTag(node bcgo.Node, listener bcgo.MiningListener, hash []byte, tags []string) ([]*bcgo.Reference, error) {
