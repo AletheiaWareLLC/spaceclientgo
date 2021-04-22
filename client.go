@@ -76,7 +76,10 @@ func NewSpaceClient(peers ...string) SpaceClient {
 // Adds file
 func (c *spaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mime string, reader io.Reader) (*bcgo.Reference, error) {
 	account := node.Account()
-	metas := spacego.OpenMetaChannel(account.Alias())
+	alias := account.Alias()
+	metas := node.OpenChannel(spacego.MetaChannelName(alias), func() bcgo.Channel {
+		return spacego.OpenMetaChannel(alias)
+	})
 	if err := metas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -111,7 +114,10 @@ func (c *spaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mi
 	}
 
 	metaId := base64.RawURLEncoding.EncodeToString(reference.RecordHash)
-	deltas := spacego.OpenDeltaChannel(metaId)
+
+	deltas := node.OpenChannel(spacego.DeltaChannelName(metaId), func() bcgo.Channel {
+		return spacego.OpenDeltaChannel(metaId)
+	})
 	if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -198,9 +204,12 @@ func (c *spaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, chann
 	return nil
 }
 
-// MetaForHash owned by key with given hash
+// MetaForHash owned by key with given meta ID
 func (c *spaceClient) MetaForHash(node bcgo.Node, recordHash []byte, callback spacego.MetaCallback) error {
-	metas := spacego.OpenMetaChannel(node.Account().Alias())
+	alias := node.Account().Alias()
+	metas := node.OpenChannel(spacego.MetaChannelName(alias), func() bcgo.Channel {
+		return spacego.OpenMetaChannel(alias)
+	})
 	if err := metas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -211,7 +220,10 @@ func (c *spaceClient) MetaForHash(node bcgo.Node, recordHash []byte, callback sp
 
 // AllMetas lists files owned by key
 func (c *spaceClient) AllMetas(node bcgo.Node, callback spacego.MetaCallback) error {
-	metas := spacego.OpenMetaChannel(node.Account().Alias())
+	alias := node.Account().Alias()
+	metas := node.OpenChannel(spacego.MetaChannelName(alias), func() bcgo.Channel {
+		return spacego.OpenMetaChannel(alias)
+	})
 	if err := metas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -220,10 +232,13 @@ func (c *spaceClient) AllMetas(node bcgo.Node, callback spacego.MetaCallback) er
 	})
 }
 
-// ReadFile with the given hash
+// ReadFile with the given meta ID.
 func (c *spaceClient) ReadFile(node bcgo.Node, metaId []byte) (io.Reader, error) {
 	// TODO read from cache if file exists
-	deltas := spacego.OpenDeltaChannel(base64.RawURLEncoding.EncodeToString(metaId))
+	mId := base64.RawURLEncoding.EncodeToString(metaId)
+	deltas := node.OpenChannel(spacego.DeltaChannelName(mId), func() bcgo.Channel {
+		return spacego.OpenDeltaChannel(mId)
+	})
 	if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -237,13 +252,16 @@ func (c *spaceClient) ReadFile(node bcgo.Node, metaId []byte) (io.Reader, error)
 	return bytes.NewReader(buffer), nil
 }
 
-// WriteFile with the given hash
+// WriteFile with the given meta ID.
 func (c *spaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, metaId []byte) (io.WriteCloser, error) {
-	// Read current file into a old buffer
-	deltas := spacego.OpenDeltaChannel(base64.RawURLEncoding.EncodeToString(metaId))
+	mId := base64.RawURLEncoding.EncodeToString(metaId)
+	deltas := node.OpenChannel(spacego.DeltaChannelName(mId), func() bcgo.Channel {
+		return spacego.OpenDeltaChannel(mId)
+	})
 	if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
+	// Read current file into a old buffer
 	old := []byte{}
 	if err := spacego.IterateDeltas(node, deltas, func(entry *bcgo.BlockEntry, delta *spacego.Delta) error {
 		old = spacego.ApplyDelta(delta, old)
@@ -257,13 +275,16 @@ func (c *spaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, me
 	}), nil
 }
 
-// WatchFile triggers the given callback whenever the file with given hash updates.
-func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, hash []byte, callback func()) error {
+// WatchFile triggers the given callback whenever the file with given meta ID updates.
+func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, metaId []byte, callback func()) error {
 	initial := time.Second
 	limit := time.Hour
 	duration := initial
 	ticker := time.NewTicker(duration)
-	deltas := spacego.OpenDeltaChannel(base64.RawURLEncoding.EncodeToString(hash)) // TODO open channel from node
+	mId := base64.RawURLEncoding.EncodeToString(metaId)
+	deltas := node.OpenChannel(spacego.DeltaChannelName(mId), func() bcgo.Channel {
+		return spacego.OpenDeltaChannel(mId)
+	})
 	deltas.AddTrigger(callback)
 	// TODO replace polling with mechanism to register with provider to listen for remote updates
 	go func() {
@@ -271,7 +292,7 @@ func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, hash []byte
 		for {
 			log.Println("Duration:", duration)
 			select {
-			case t:=<-ticker.C:
+			case t := <-ticker.C:
 				log.Println("Tick:", t)
 				head := deltas.Head()
 				if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
@@ -300,7 +321,10 @@ func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, hash []byte
 // SearchMeta searches files by metadata
 func (c *spaceClient) SearchMeta(node bcgo.Node, filter spacego.MetaFilter, callback spacego.MetaCallback) error {
 	account := node.Account()
-	metas := spacego.OpenMetaChannel(account.Alias())
+	alias := account.Alias()
+	metas := node.OpenChannel(spacego.MetaChannelName(alias), func() bcgo.Channel {
+		return spacego.OpenMetaChannel(alias)
+	})
 	if err := metas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -319,7 +343,10 @@ func (c *spaceClient) SearchMeta(node bcgo.Node, filter spacego.MetaFilter, call
 // SearchTag searches files by tag
 func (c *spaceClient) SearchTag(node bcgo.Node, filter spacego.TagFilter, callback spacego.MetaCallback) error {
 	return c.SearchMeta(node, nil, func(metaEntry *bcgo.BlockEntry, meta *spacego.Meta) error {
-		tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(metaEntry.RecordHash))
+		metaId := base64.RawURLEncoding.EncodeToString(metaEntry.RecordHash)
+		tags := node.OpenChannel(spacego.TagChannelName(metaId), func() bcgo.Channel {
+			return spacego.OpenTagChannel(metaId)
+		})
 		if err := tags.Refresh(node.Cache(), node.Network()); err != nil {
 			log.Println(err)
 		}
@@ -332,14 +359,20 @@ func (c *spaceClient) SearchTag(node bcgo.Node, filter spacego.TagFilter, callba
 	})
 }
 
-// AddTag adds the given tag for the file with the given hash
+// AddTag adds the given tag for the file with the given meta ID
 func (c *spaceClient) AddTag(node bcgo.Node, listener bcgo.MiningListener, metaId []byte, tag []string) ([]*bcgo.Reference, error) {
 	account := node.Account()
-	metas := spacego.OpenMetaChannel(account.Alias())
+	alias := account.Alias()
+	metas := node.OpenChannel(spacego.MetaChannelName(alias), func() bcgo.Channel {
+		return spacego.OpenMetaChannel(alias)
+	})
 	if err := metas.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
-	tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(metaId))
+	mId := base64.RawURLEncoding.EncodeToString(metaId)
+	tags := node.OpenChannel(spacego.TagChannelName(mId), func() bcgo.Channel {
+		return spacego.OpenTagChannel(mId)
+	})
 	if err := tags.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -374,9 +407,12 @@ func (c *spaceClient) AddTag(node bcgo.Node, listener bcgo.MiningListener, metaI
 	return references, nil
 }
 
-// AllTagsForHash lists all tags for the file with the given hash
+// AllTagsForHash lists all tags for the file with the given meta ID
 func (c *spaceClient) AllTagsForHash(node bcgo.Node, metaId []byte, callback spacego.TagCallback) error {
-	tags := spacego.OpenTagChannel(base64.RawURLEncoding.EncodeToString(metaId))
+	mId := base64.RawURLEncoding.EncodeToString(metaId)
+	tags := node.OpenChannel(spacego.TagChannelName(mId), func() bcgo.Channel {
+		return spacego.OpenTagChannel(mId)
+	})
 	if err := tags.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -396,7 +432,9 @@ func (c *spaceClient) Registration(merchant string, callback financego.Registrat
 	if err != nil {
 		return err
 	}
-	registrations := spacego.OpenRegistrationChannel()
+	registrations := node.OpenChannel(spacego.SPACE_REGISTRATION, func() bcgo.Channel {
+		return spacego.OpenRegistrationChannel()
+	})
 	if err := registrations.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
@@ -409,7 +447,9 @@ func (c *spaceClient) Subscription(merchant string, callback financego.Subscript
 	if err != nil {
 		return err
 	}
-	subscriptions := spacego.OpenSubscriptionChannel()
+	subscriptions := node.OpenChannel(spacego.SPACE_SUBSCRIPTION, func() bcgo.Channel {
+		return spacego.OpenSubscriptionChannel()
+	})
 	if err := subscriptions.Refresh(node.Cache(), node.Network()); err != nil {
 		log.Println(err)
 	}
