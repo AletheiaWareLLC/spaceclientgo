@@ -33,7 +33,7 @@ type SpaceClient interface {
 	bcclientgo.BCClient
 
 	Add(bcgo.Node, bcgo.MiningListener, string, string, io.Reader) (*bcgo.Reference, error)
-	Append(bcgo.Node, bcgo.MiningListener, bcgo.Channel, *spacego.Delta) error
+	Append(bcgo.Node, bcgo.MiningListener, bcgo.Channel, ...*spacego.Delta) error
 	MetaForHash(bcgo.Node, []byte, spacego.MetaCallback) error
 	AllMetas(bcgo.Node, spacego.MetaCallback) error
 	ReadFile(bcgo.Node, []byte) (io.Reader, error)
@@ -156,29 +156,38 @@ func (c *spaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mi
 }
 
 // Append adds the given delta to the file
-func (c *spaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, deltas bcgo.Channel, delta *spacego.Delta) error {
-	data, err := proto.Marshal(delta)
-	if err != nil {
-		return err
+func (c *spaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, channel bcgo.Channel, deltas ...*spacego.Delta) error {
+	if len(deltas) == 0 {
+		return nil
 	}
+	account := node.Account()
+	access := []bcgo.Identity{account}
+	name := channel.Name()
+	cache := node.Cache()
+	for _, d := range deltas {
+		data, err := proto.Marshal(d)
+		if err != nil {
+			return err
+		}
 
-	_, record, err := bcgo.CreateRecord(bcgo.Timestamp(), node.Account(), []bcgo.Identity{node.Account()}, nil, data)
-	if err != nil {
-		return err
-	}
+		_, record, err := bcgo.CreateRecord(bcgo.Timestamp(), account, access, nil, data)
+		if err != nil {
+			return err
+		}
 
-	if _, err := bcgo.WriteRecord(deltas.Name(), node.Cache(), record); err != nil {
-		return err
+		if _, err := bcgo.WriteRecord(name, cache, record); err != nil {
+			return err
+		}
 	}
 
 	// Mine file channel
-	if _, _, err := bcgo.Mine(node, deltas, spacego.THRESHOLD_CUSTOMER, listener); err != nil {
+	if _, _, err := bcgo.Mine(node, channel, spacego.THRESHOLD_CUSTOMER, listener); err != nil {
 		return err
 	}
 
 	if n := node.Network(); n != nil && !reflect.ValueOf(n).IsNil() {
 		// Push update to peers
-		if err := deltas.Push(node.Cache(), n); err != nil {
+		if err := channel.Push(node.Cache(), n); err != nil {
 			log.Println(err)
 		}
 	}
