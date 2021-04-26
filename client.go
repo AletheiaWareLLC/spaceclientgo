@@ -40,7 +40,7 @@ type SpaceClient interface {
 	AllMetas(bcgo.Node, spacego.MetaCallback) error
 	ReadFile(bcgo.Node, []byte) (io.Reader, error)
 	WriteFile(bcgo.Node, bcgo.MiningListener, []byte) (io.WriteCloser, error)
-	WatchFile(context.Context, bcgo.Node, []byte, func()) error
+	WatchFile(context.Context, bcgo.Node, []byte, func())
 
 	/*
 		AddPreview(bcgo.Node, bcgo.MiningListener, []byte, []string) ([]*bcgo.Reference, error)
@@ -276,7 +276,7 @@ func (c *spaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, me
 }
 
 // WatchFile triggers the given callback whenever the file with given meta ID updates.
-func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, metaId []byte, callback func()) error {
+func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, metaId []byte, callback func()) {
 	initial := time.Second
 	limit := time.Hour
 	duration := initial
@@ -285,37 +285,47 @@ func (c *spaceClient) WatchFile(ctx context.Context, node bcgo.Node, metaId []by
 	deltas := node.OpenChannel(spacego.DeltaChannelName(mId), func() bcgo.Channel {
 		return spacego.OpenDeltaChannel(mId)
 	})
-	deltas.AddTrigger(callback)
+	deltas.AddTrigger(func() {
+		if ctx.Err() != nil {
+			// Context was already cancelled
+			return
+		}
+		go callback()
+	})
 	// TODO replace polling with mechanism to register with provider to listen for remote updates
 	go func() {
 		defer ticker.Stop()
+		var errors int
 		for {
-			log.Println("Duration:", duration)
 			select {
-			case t := <-ticker.C:
-				log.Println("Tick:", t)
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
 				head := deltas.Head()
 				if err := deltas.Refresh(node.Cache(), node.Network()); err != nil {
 					log.Println(err)
 				}
 				if bytes.Equal(head, deltas.Head()) {
-					// No change, exponential backoff
-					duration *= 2
-					if duration > limit {
-						duration = limit
+					// No change
+					errors++
+					if errors > 3 {
+						// Too many errors, exponential backoff
+						duration *= 2
+						if duration > limit {
+							duration = limit
+						}
+						errors = 0
 					}
 				} else {
 					// Change, reset duration
 					duration = initial
+					errors = 0
 				}
 				ticker.Stop()
 				ticker = time.NewTicker(duration)
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()
-	return nil
 }
 
 // SearchMeta searches files by metadata
