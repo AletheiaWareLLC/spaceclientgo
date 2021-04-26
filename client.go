@@ -113,6 +113,10 @@ func (c *spaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mi
 		}
 	}
 
+	if reader == nil {
+		return reference, nil
+	}
+
 	metaId := base64.RawURLEncoding.EncodeToString(reference.RecordHash)
 
 	deltas := node.OpenChannel(spacego.DeltaChannelName(metaId), func() bcgo.Channel {
