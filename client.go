@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 Aletheia Ware LLC
+ * Copyright 2019-2021 Aletheia Ware LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ type SpaceClient interface {
 	bcclientgo.BCClient
 
 	Add(bcgo.Node, bcgo.MiningListener, string, string, io.Reader) (*bcgo.Reference, error)
-	Append(bcgo.Node, bcgo.MiningListener, bcgo.Channel, ...*spacego.Delta) error
+	Amend(bcgo.Node, bcgo.MiningListener, bcgo.Channel, ...*spacego.Delta) error
 	MetaForHash(bcgo.Node, []byte, spacego.MetaCallback) error
 	AllMetas(bcgo.Node, spacego.MetaCallback) error
 	ReadFile(bcgo.Node, []byte) (io.Reader, error)
@@ -169,8 +169,8 @@ func (c *spaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name, mi
 	return reference, nil
 }
 
-// Append adds the given delta to the file
-func (c *spaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, channel bcgo.Channel, deltas ...*spacego.Delta) error {
+// Amend adds the given delta to the file
+func (c *spaceClient) Amend(node bcgo.Node, listener bcgo.MiningListener, channel bcgo.Channel, deltas ...*spacego.Delta) error {
 	if len(deltas) == 0 {
 		return nil
 	}
@@ -275,7 +275,7 @@ func (c *spaceClient) WriteFile(node bcgo.Node, listener bcgo.MiningListener, me
 	}
 	var new bytes.Buffer
 	return spacego.NewCloser(&new, func() error {
-		return c.Append(node, listener, deltas, spacego.Difference(old, new.Bytes())...)
+		return c.Amend(node, listener, deltas, spacego.Difference(old, new.Bytes())...)
 	}), nil
 }
 
@@ -366,6 +366,7 @@ func (c *spaceClient) SearchTag(node bcgo.Node, filter spacego.TagFilter, callba
 		}
 		return spacego.ReadTag(tags, node.Cache(), node.Network(), node.Account(), nil, func(tagEntry *bcgo.BlockEntry, tag *spacego.Tag) error {
 			if filter != nil && !filter.Filter(tag) {
+				// Tag doesn't pass filter
 				return nil
 			}
 			return callback(metaEntry, meta)

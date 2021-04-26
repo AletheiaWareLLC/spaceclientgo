@@ -104,7 +104,7 @@ func TestClient_Add_and_ReadFile(t *testing.T) {
 	assertFile(t, client, node, ref.RecordHash, 7, "testing")
 }
 
-func TestClient_Append_and_ReadFile(t *testing.T) {
+func TestClient_Amend_and_ReadFile(t *testing.T) {
 	alias := "Tester"
 	cache := cache.NewMemory(10)
 	node := makeNode(t, alias, cache, nil)
@@ -121,14 +121,14 @@ func TestClient_Append_and_ReadFile(t *testing.T) {
 	deltas := spacego.OpenDeltaChannel(metaId)
 	testinggo.AssertNoError(t, deltas.Load(node.Cache(), nil))
 
-	testinggo.AssertNoError(t, client.Append(node, nil, deltas, &spacego.Delta{
+	testinggo.AssertNoError(t, client.Amend(node, nil, deltas, &spacego.Delta{
 		Offset: 4,
 		Delete: 3,
 		Insert: []byte("foobar"),
 	}))
 	assertFile(t, client, node, ref.RecordHash, 10, "testfoobar")
 
-	testinggo.AssertNoError(t, client.Append(node, nil, deltas, &spacego.Delta{
+	testinggo.AssertNoError(t, client.Amend(node, nil, deltas, &spacego.Delta{
 		Delete: 7,
 	}))
 	assertFile(t, client, node, ref.RecordHash, 3, "bar")
@@ -222,7 +222,11 @@ func TestClientMetaForHash(t *testing.T) {
 	}
 }
 
-func TestClientSearch(t *testing.T) {
+func TestClientSearchMeta(t *testing.T) {
+	// TODO
+}
+
+func TestClientSearchTag(t *testing.T) {
 	// TODO
 }
 

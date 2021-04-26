@@ -71,7 +71,7 @@ func (c *MockSpaceClient) Add(node bcgo.Node, listener bcgo.MiningListener, name
 	return c.MockReference, c.MockAddError
 }
 
-func (c *MockSpaceClient) Append(node bcgo.Node, listener bcgo.MiningListener, channel bcgo.Channel, deltas ...*spacego.Delta) error {
+func (c *MockSpaceClient) Amend(node bcgo.Node, listener bcgo.MiningListener, channel bcgo.Channel, deltas ...*spacego.Delta) error {
 	c.MockNode = node
 	c.MockListener = listener
 	c.MockDeltaChannel = channel
